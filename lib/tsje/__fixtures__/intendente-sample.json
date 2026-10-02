@@ -1,0 +1,42 @@
+{
+  "totales": {
+    "totalMesas": 761,
+    "mesasPublicadas": 761,
+    "blancos": 4847,
+    "nulos": 615,
+    "totalVotos": 132736,
+    "canElectores": 266290,
+    "canElectoresPublicados": 266290,
+    "nocomputados": 423,
+    "tipCandidatura": 1
+  },
+  "candidatos": [
+    {
+      "orden": 1,
+      "numLista": "2",
+      "nomCandidato": "Camilo Perez",
+      "desPartido": "HONOR COLORADO",
+      "colLista": "74, 85, 104",
+      "votos": 81416,
+      "imgCandidato": "CANDIDATO-630946",
+      "candidatosPref": null
+    },
+    {
+      "orden": 2,
+      "numLista": "7",
+      "nomCandidato": "Arnaldo Samaniego",
+      "desPartido": "FUERZA Y CAUSA REPUBLICANA POR ASUNCION",
+      "colLista": "134, 149, 165",
+      "votos": 43574,
+      "imgCandidato": "CANDIDATO-630342",
+      "candidatosPref": null
+    }
+  ],
+  "hora": {
+    "hour": 15, "minute": 40, "second": 3, "dayOfYear": 167,
+    "dayOfWeek": "TUESDAY", "dayOfMonth": 16, "monthValue": 6, "year": 2026,
+    "month": "JUNE", "nano": 67000000,
+    "chronology": { "calendarType": "iso8601", "id": "ISO" }
+  },
+  "horaFormated": "16-06-2026 15:40:03"
+}

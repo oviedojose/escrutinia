@@ -1,0 +1,35 @@
+{
+  "totales": {
+    "totalMesas": 761,
+    "mesasPublicadas": 761,
+    "blancos": 4951,
+    "nulos": 615,
+    "totalVotos": 132736,
+    "canElectores": 266290,
+    "canElectoresPublicados": 266290,
+    "nocomputados": 423,
+    "tipCandidatura": 2
+  },
+  "candidatos": [
+    {
+      "orden": 4,
+      "numLista": "2C",
+      "nomCandidato": " ",
+      "desPartido": "HONOR COLORADO C",
+      "colLista": "163, 197, 155",
+      "votos": 37099,
+      "imgCandidato": "L2C",
+      "candidatosPref": [
+        { "orden": 4, "numLista": "2C", "nomCandidato": "Miguel Sosa", "desPartido": "HONOR COLORADO C", "colLista": "163, 197, 155", "votos": 9283, "ordCandidato": 1 },
+        { "orden": 4, "numLista": "2C", "nomCandidato": "Nasser Esgaib", "desPartido": "HONOR COLORADO C", "colLista": "163, 197, 155", "votos": 4811, "ordCandidato": 2 }
+      ]
+    }
+  ],
+  "hora": {
+    "hour": 15, "minute": 40, "second": 3, "dayOfYear": 167,
+    "dayOfWeek": "TUESDAY", "dayOfMonth": 16, "monthValue": 6, "year": 2026,
+    "month": "JUNE", "nano": 91000000,
+    "chronology": { "calendarType": "iso8601", "id": "ISO" }
+  },
+  "horaFormated": "16-06-2026 15:40:03"
+}

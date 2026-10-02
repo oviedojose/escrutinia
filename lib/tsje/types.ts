@@ -13,16 +13,23 @@ export type TsjeTotales = {
 };
 
 export type TsjeCandidatoPref = {
-  id: number;
-  nombre: string;
+  orden: number;
+  numLista: string;
+  nomCandidato: string;
+  desPartido: string;
+  colLista: string;
   votos: number;
+  ordCandidato: number;
 };
 
 export type TsjeCandidato = {
-  id: number;
-  nombre: string;
-  siglas: string;
+  orden: number;
+  numLista: string;
+  nomCandidato: string;
+  desPartido: string;
+  colLista: string;
   votos: number;
+  imgCandidato: string;
   candidatosPref: TsjeCandidatoPref[];
 };
 
@@ -31,4 +38,10 @@ export type TsjeParams = {
   candidatura: TipoCandidatura;
   departamento: number;
   distrito: number;
+};
+
+export type TsjeRespuesta = {
+  totales: TsjeTotales;
+  candidatos: TsjeCandidato[];
+  horaFormated: string;
 };
