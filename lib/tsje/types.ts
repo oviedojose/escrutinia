@@ -30,7 +30,7 @@ export type TsjeCandidato = {
   colLista: string;
   votos: number;
   imgCandidato: string;
-  candidatosPref: TsjeCandidatoPref[];
+  candidatosPref: TsjeCandidatoPref[] | null;
 };
 
 export type TsjeParams = {

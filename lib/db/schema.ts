@@ -4,6 +4,7 @@ import {
   text,
   serial,
   timestamp,
+  boolean,
   jsonb,
   primaryKey,
   foreignKey,
@@ -31,6 +32,7 @@ export const elecciones = pgTable("elecciones", {
   id: serial("id").primaryKey(),
   codeleccion: integer("codeleccion").notNull().unique(),
   nombre: text("nombre").notNull(),
+  activa: boolean("activa").notNull().default(false),
 });
 
 export const resultadosSnapshot = pgTable(

@@ -1,0 +1,1 @@
+ALTER TABLE "elecciones" ADD COLUMN "activa" boolean DEFAULT false NOT NULL;

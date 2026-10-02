@@ -30,7 +30,9 @@ describe("calcularDHondt", () => {
 
     const resultado = calcularDHondt(listas, 12);
     const ordenPorListaYDivisor = (listaId: string, divisor: number) =>
-      resultado.cocientes.find((c) => c.listaId === listaId && c.divisor === divisor)?.orden;
+      resultado.cocientes.find(
+        (c) => c.listaId === listaId && c.divisor === divisor,
+      )?.orden;
 
     expect(ordenPorListaYDivisor("A", 1)).toBe(1);
     expect(ordenPorListaYDivisor("PLRA", 1)).toBe(2);
