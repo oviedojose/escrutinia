@@ -9,7 +9,7 @@ export async function fetchResultadoTsje(
   params: TsjeParams,
   obtenerCookie: () => Promise<string> = obtenerCookieSucuri,
 ): Promise<TsjeRespuesta> {
-  const url = `${BASE_URL}?codeleccion=${params.codeleccion}&candidatura=${params.candidatura}&departamento=${params.departamento}&distrito=${params.distrito}`;
+  const url = `${BASE_URL}?codeleccion=${params.codeleccion}&candidatura=${params.candidatura}&departamento=${params.departamento}&municipio=${params.municipio}`;
 
   const cookie = await obtenerCookie();
 

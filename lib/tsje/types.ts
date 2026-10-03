@@ -37,7 +37,7 @@ export type TsjeParams = {
   codeleccion: number;
   candidatura: TipoCandidatura;
   departamento: number;
-  distrito: number;
+  municipio: number;
 };
 
 export type TsjeRespuesta = {

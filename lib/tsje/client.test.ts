@@ -18,12 +18,12 @@ describe("fetchResultadoTsje", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await fetchResultadoTsje(
-      { codeleccion: 44, candidatura: 1, departamento: 11, distrito: 13 },
+      { codeleccion: 44, candidatura: 1, departamento: 11, municipio: 13 },
       cookieDePrueba,
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://resultados.tsje.gov.py/publicacion/dinamics/divulgacion.ajax.php?codeleccion=44&candidatura=1&departamento=11&distrito=13",
+      "https://resultados.tsje.gov.py/publicacion/dinamics/divulgacion.ajax.php?codeleccion=44&candidatura=1&departamento=11&municipio=13",
       expect.objectContaining({
         headers: expect.objectContaining({
           Cookie: "sucuricp_tfca_test=abc123",
@@ -42,7 +42,7 @@ describe("fetchResultadoTsje", () => {
 
     await expect(
       fetchResultadoTsje(
-        { codeleccion: 44, candidatura: 1, departamento: 11, distrito: 13 },
+        { codeleccion: 44, candidatura: 1, departamento: 11, municipio: 13 },
         cookieDePrueba,
       ),
     ).rejects.toThrow("500");
@@ -65,7 +65,7 @@ describe("fetchResultadoTsje", () => {
       .mockResolvedValueOnce("cookie-nueva");
 
     const result = await fetchResultadoTsje(
-      { codeleccion: 44, candidatura: 1, departamento: 11, distrito: 13 },
+      { codeleccion: 44, candidatura: 1, departamento: 11, municipio: 13 },
       obtenerCookieMock,
     );
 

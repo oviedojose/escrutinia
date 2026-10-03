@@ -1,69 +1,77 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { db } from "@/lib/db/client";
+import { departamentos, elecciones, municipios } from "@/lib/db/schema";
+import { resolverEleccionSeleccionada } from "@/lib/queries/eleccion-seleccionada";
+import { InicioSelectorForm } from "./components/InicioSelectorForm";
+import { FiltrosPendingProvider } from "./components/FiltrosPendingContext";
+import { EleccionSelector } from "./components/EleccionSelector";
+import { FiltrosPendingIndicator } from "./components/FiltrosPendingIndicator";
 
-export default function Home() {
+export default async function InicioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    departamento?: string;
+    municipio?: string;
+    eleccion?: string;
+  }>;
+}) {
+  const params = await searchParams;
+  const [todosDepartamentos, todosMunicipios, todasElecciones] =
+    await Promise.all([
+      db.select().from(departamentos),
+      db.select().from(municipios),
+      db.select().from(elecciones),
+    ]);
+
+  const departamentoId = Number(
+    params.departamento ?? todosDepartamentos[0]?.id ?? 0,
+  );
+  const municipioId = Number(
+    params.municipio ??
+      todosMunicipios.find((m) => m.departamentoId === departamentoId)?.id ??
+      0,
+  );
+
+  const eleccionSeleccionada = resolverEleccionSeleccionada(
+    todasElecciones,
+    params.eleccion,
+  );
+
+  const eleccionQuery = eleccionSeleccionada
+    ? `&eleccion=${eleccionSeleccionada.codeleccion}`
+    : "";
+
+  const query = `?departamento=${departamentoId}&distrito=${municipioId}&${eleccionQuery}`;
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="esc-inicio">
+      <h1>Elecciones Municipales</h1>
+      <p>
+        Elegí un departamento y un distrito para ver quién va ganando en
+        Intendente y cómo quedarían las bancas de Concejales.
+      </p>
+
+      <FiltrosPendingProvider>
+        {todasElecciones.length > 0 && eleccionSeleccionada && (
+          <EleccionSelector
+            elecciones={todasElecciones}
+            codeleccionActual={eleccionSeleccionada.codeleccion}
+          />
+        )}
+
+        <InicioSelectorForm
+          departamentos={todosDepartamentos}
+          municipios={todosMunicipios}
+          departamentoId={departamentoId}
+          municipioId={municipioId}
         />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        <FiltrosPendingIndicator />
+      </FiltrosPendingProvider>
+
+      <nav>
+        <a href="/">Ver resultados de Intendente</a>
+        <a href="/">Ver resultados de Concejales</a>
+      </nav>
+    </main>
   );
 }
