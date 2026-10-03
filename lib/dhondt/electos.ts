@@ -10,7 +10,11 @@ export interface ElectoResultado extends CandidatoPref {
 }
 
 export function calcularElectos(candidatos: CandidatoPref[], bancas: number): ElectoResultado[] {
-  const ordenados = [...candidatos].sort((a, b) => b.votos - a.votos);
+  // Art. 258 del Código Electoral: a igual cantidad de votos preferenciales
+  // (incluido cero), decide el orden inicial de la lista.
+  const ordenados = [...candidatos].sort(
+    (a, b) => b.votos - a.votos || a.ordCandidato - b.ordCandidato,
+  );
 
   return ordenados.map((c, idx) => ({
     ...c,

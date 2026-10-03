@@ -56,4 +56,62 @@ describe("calcularDHondt", () => {
     expect(resultado.bancasPorLista).toEqual({ A: 0, B: 0 });
     expect(resultado.cocientes.every((c) => c.orden === null)).toBe(true);
   });
+
+  describe("empates (art. 258 del Código Electoral)", () => {
+    it("si dos cocientes empatan, la banca va a la lista con más votos, sin importar el orden de entrada", () => {
+      // 2 bancas: A÷1=600 gana la 1ª; A÷2=300 y B÷1=300 empatan por la 2ª.
+      const resultado = calcularDHondt(
+        [
+          { id: "B", votos: 300 },
+          { id: "A", votos: 600 },
+        ],
+        2,
+      );
+
+      expect(resultado.bancasPorLista).toEqual({ A: 2, B: 0 });
+      expect(resultado.empateASortear).toBeNull();
+    });
+
+    it("si el empate es total (mismo cociente y mismos votos) en la última banca, lo marca para sorteo", () => {
+      const resultado = calcularDHondt(
+        [
+          { id: "A", votos: 300 },
+          { id: "B", votos: 300 },
+        ],
+        3,
+      );
+
+      // A÷1 y B÷1 entran; A÷2=150 y B÷2=150 empatan por la 3ª banca.
+      expect(resultado.empateASortear).toEqual({
+        listas: ["A", "B"],
+        bancas: 1,
+      });
+    });
+
+    it("no marca sorteo si todas las listas empatadas entran", () => {
+      const resultado = calcularDHondt(
+        [
+          { id: "A", votos: 300 },
+          { id: "B", votos: 300 },
+        ],
+        2,
+      );
+
+      expect(resultado.bancasPorLista).toEqual({ A: 1, B: 1 });
+      expect(resultado.empateASortear).toBeNull();
+    });
+
+    it("no marca sorteo cuando no hay votos", () => {
+      const resultado = calcularDHondt(
+        [
+          { id: "A", votos: 0 },
+          { id: "B", votos: 0 },
+        ],
+        1,
+      );
+
+      expect(resultado.empateASortear).toBeNull();
+    });
+  });
 });
+

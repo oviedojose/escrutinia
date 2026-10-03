@@ -137,6 +137,20 @@ export default async function ConcejalesPage({
         candidatos postulados por lista y la distribución se calcula en base a
         los votos escrutados del TREP mediante el método D&apos;Hondt).
       </p>
+      {vista.empateASortear && (
+        <p className="esc-disclaimer" role="status">
+          Empate exacto: {vista.empateASortear.bancas === 1
+            ? "la última banca"
+            : `las últimas ${vista.empateASortear.bancas} bancas`}{" "}
+          se disputa{vista.empateASortear.bancas === 1 ? "" : "n"} entre{" "}
+          {vista.empateASortear.listas
+            .map((l) => `${l.numLista} ${l.desPartido}`)
+            .join(", ")}{" "}
+          con el mismo cociente y la misma cantidad de votos. Según el art. 258
+          del Código Electoral se define por sorteo, así que la distribución
+          mostrada para esas listas es provisoria.
+        </p>
+      )}
 
       <div className="esc-stat-grid">
         <StatTile

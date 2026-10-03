@@ -18,6 +18,11 @@ export interface ListaConElectos {
   electos: ElectoResultado[];
 }
 
+export interface EmpateASortearVista {
+  listas: { numLista: string; desPartido: string }[];
+  bancas: number;
+}
+
 export interface VistaConcejales {
   totales: TsjeRespuesta["totales"];
   bancasTotales: number;
@@ -26,6 +31,7 @@ export interface VistaConcejales {
   distribucion: DistribucionBanca[];
   dhondt: DhondtResultado;
   listasConElectos: ListaConElectos[];
+  empateASortear: EmpateASortearVista | null;
   horaFormated: string;
 }
 
@@ -83,6 +89,15 @@ export function construirVistaConcejales(
     distribucion,
     dhondt,
     listasConElectos,
+    empateASortear: dhondt.empateASortear && {
+      bancas: dhondt.empateASortear.bancas,
+      listas: dhondt.empateASortear.listas.map((numLista) => ({
+        numLista,
+        desPartido:
+          respuesta.candidatos.find((c) => c.numLista === numLista)
+            ?.desPartido ?? numLista,
+      })),
+    },
     horaFormated: respuesta.horaFormated,
   };
 }

@@ -88,4 +88,29 @@ describe("construirVistaConcejales", () => {
     expect(vista.votosValidos).toBe(18420 + 14110 + 6870 + 3210);
     expect(vista.votosValidos).not.toBe(vista.totales.totalVotos);
   });
+
+  it("no informa empate cuando no lo hay", () => {
+    expect(construirVistaConcejales(respuesta, 12).empateASortear).toBeNull();
+  });
+
+  it("informa un empate a sortear con el nombre del partido de cada lista", () => {
+    const respuestaEmpatada: TsjeRespuesta = {
+      ...respuesta,
+      candidatos: [
+        { orden: 1, numLista: "2", nomCandidato: "", desPartido: "PARTIDO A", colLista: "0,0,0", votos: 300, imgCandidato: "", candidatosPref: null },
+        { orden: 2, numLista: "7", nomCandidato: "", desPartido: "PARTIDO B", colLista: "0,0,0", votos: 300, imgCandidato: "", candidatosPref: null },
+      ],
+    };
+
+    const vista = construirVistaConcejales(respuestaEmpatada, 3);
+
+    expect(vista.empateASortear).toEqual({
+      bancas: 1,
+      listas: [
+        { numLista: "2", desPartido: "PARTIDO A" },
+        { numLista: "7", desPartido: "PARTIDO B" },
+      ],
+    });
+  });
 });
+

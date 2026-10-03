@@ -37,7 +37,7 @@ export function MunicipioSelector({
           onChange={(e) => {
             const nuevoDepartamentoId = Number(e.target.value);
             const primerMunicipio = municipios.find(
-              (m) => m.departamentoId === departamentoId,
+              (m) => m.departamentoId === nuevoDepartamentoId,
             );
             onChange(nuevoDepartamentoId, primerMunicipio?.id ?? 0);
           }}
