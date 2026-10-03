@@ -1,6 +1,7 @@
 import type { TsjeParams, TsjeRespuesta } from "./types";
 import { obtenerCookieSucuri, invalidarCookieSucuri } from "./sucuri-session";
 import { USER_AGENT } from "./user-agent";
+import { validarRespuestaTsje } from "./validar";
 
 const BASE_URL =
   "https://resultados.tsje.gov.py/publicacion/dinamics/divulgacion.ajax.php";
@@ -29,5 +30,5 @@ export async function fetchResultadoTsje(
     throw new Error(`TSJE respondió ${res.status} para ${url}`);
   }
 
-  return (await res.json()) as TsjeRespuesta;
+  return validarRespuestaTsje(await res.json());
 }

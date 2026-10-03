@@ -1,36 +1,177 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Escrutinia
 
-## Getting Started
+**Resultados de las elecciones municipales de Paraguay, distrito por distrito, con el reparto de bancas de concejales calculado en tiempo real.**
 
-First, run the development server:
+Escrutinia toma los datos del TREP (Transmisión de Resultados Electorales Preliminares) que publica el Tribunal Superior de Justicia Electoral (TSJE) y los presenta de una forma clara: quién va ganando la intendencia y **cómo quedarían repartidas las bancas de la Junta Municipal** según el método D'Hondt, incluyendo qué candidatos resultarían electos por voto preferencial.
+
+El sitio oficial del TSJE muestra votos por lista, pero no calcula el reparto de bancas ni quiénes entrarían. Escrutinia hace ese cálculo y muestra el paso a paso.
+
+---
+
+## Capturas
+
+### Inicio: elegir la elección, el departamento y el distrito
+
+![Pantalla de inicio](docs/screenshots/inicio.png)
+
+### Intendente: votos por candidato y totales del escrutinio
+
+![Resultados de Intendente](docs/screenshots/intendente.png)
+
+### Concejales: distribución de bancas, tabla D'Hondt y concejales electos
+
+![Resultados de Concejales](docs/screenshots/concejales.png)
+
+---
+
+## Funcionalidades
+
+- **Selector de elección, departamento y distrito.** La selección se guarda en la URL, así que cualquier vista se puede compartir o guardar como marcador.
+- **Resultados de Intendente.** Votos escrutados, porcentaje de mesas procesadas, votos en blanco y nulos, y ranking de candidatos con barras proporcionales y el color de cada lista.
+- **Resultados de Concejales:**
+  - Cantidad de bancas a repartir, deducida de la cantidad de candidatos que presenta cada lista (24 en Asunción, 12 en la mayoría de los distritos, 9 en Yguazú, etc.).
+  - Barra de distribución de bancas por lista.
+  - **Tabla D'Hondt completa** con todos los cocientes (votos ÷ 1, ÷ 2, …), marcando el orden en que se asigna cada banca.
+  - **Concejales electos** por lista, ordenados por voto preferencial.
+- **Indicador de estado.** Cada vista muestra si los datos son provisorios y la hora del corte del TSJE.
+- **Datos actualizados sin intervención.** Si el último dato guardado tiene más de 15 minutos, se vuelve a pedir al TSJE al abrir la página.
+
+---
+
+## Stack tecnológico
+
+| Capa          | Tecnología                                          | Por qué                                                                                                                                                                                          |
+| ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Framework     | **Next.js 16** (App Router, Turbopack)              | Los Server Components consultan la base y el TSJE directamente en el servidor, sin una API intermedia. Las páginas son `force-dynamic` porque los resultados cambian durante todo el escrutinio. |
+| UI            | **React 19**                                        | Las transiciones (`useTransition`) mantienen los selectores fluidos mientras el servidor carga el distrito nuevo, y muestran un indicador de carga.                                              |
+| Lenguaje      | **TypeScript**                                      | La respuesta del TSJE tiene una forma compleja (totales, candidatos, preferenciales). Tiparla (`lib/tsje/types.ts`) evita errores silenciosos en los cálculos.                                   |
+| Base de datos | **PostgreSQL en Neon** (`@neondatabase/serverless`) | Postgres serverless con un plan gratuito generoso y conexión por HTTP, que encaja con el despliegue serverless de Next.js. Las respuestas del TSJE se guardan como `jsonb` sin modificar.        |
+| ORM           | **Drizzle ORM + drizzle-kit**                       | Liviano, con tipos derivados del esquema y migraciones SQL versionadas en `drizzle/`. Sin runtime pesado ni generación de clientes.                                                              |
+| Tests         | **Vitest + Testing Library + jsdom**                | Rápido, compatible con ESM y TypeScript sin configuración extra. Cubre la lógica crítica: D'Hondt, electos, sincronización y cliente del TSJE.                                                   |
+| Calidad       | **ESLint** (`eslint-config-next`)                   | Reglas estándar de Next.js y React.                                                                                                                                                              |
+| Scripts       | **tsx**                                             | Ejecuta el seed de la base directamente en TypeScript.                                                                                                                                           |
+
+---
+
+## Arquitectura
+
+```
+                 ┌──────────────────────────────────────┐
+  Navegador ───▶ │  Next.js (Server Components)         │
+                 │  app/page.tsx · intendente · concej. │
+                 └───────────────┬──────────────────────┘
+                                 │
+                   obtenerOSincronizarSnapshot()
+                                 │
+              ¿snapshot de menos de 15 min en la base?
+                 │ sí                              │ no
+                 ▼                                 ▼
+        ┌─────────────────┐            ┌──────────────────────┐
+        │ Postgres (Neon) │◀── guarda ─│ Cliente TSJE         │
+        │ resultados_     │            │ (+ firewall Sucuri)  │
+        │ snapshot (jsonb)│            └──────────────────────┘
+        └────────┬────────┘
+                 ▼
+     lib/queries → lib/dhondt → vista lista para renderizar
+```
+
+### Decisiones de diseño
+
+- **Snapshots con caché de 15 minutos.** Cada combinación de elección, distrito y tipo de candidatura se guarda como snapshot en Postgres. Si el TSJE falla o está lento, se muestra el último dato disponible: es preferible un dato algo viejo a una pantalla vacía.
+- **Sincronización a demanda y en lote.** `lib/sync/on-demand.ts` actualiza el distrito que se está viendo. `lib/sync/service.ts` permite sincronizar muchos distritos en paralelo con concurrencia limitada.
+- **Inyección de dependencias en la lógica de sync.** Las funciones reciben sus dependencias (fetch, base de datos, reloj), así que los tests corren sin `DATABASE_URL` ni red.
+- **Firewall Sucuri.** El sitio del TSJE está detrás de Sucuri, que plantea un desafío _proof-of-work_ (SHA-256). `lib/tsje/sucuri.ts` lo resuelve, obtiene la cookie de sesión y la renueva cuando el TSJE responde 403.
+- **Cálculo puro y testeado.** `lib/dhondt/` contiene funciones puras: `calcularDHondt` reparte las bancas, `calcularElectos` ordena por voto preferencial y `bancasDesdeRespuesta` deduce cuántas bancas hay en el distrito.
+- **Clave geográfica compuesta.** El id de un distrito solo es único dentro de su departamento, por eso `municipios` usa la clave primaria compuesta `(departamento_id, id)`.
+
+---
+
+## Estructura del proyecto
+
+```
+app/
+  page.tsx               # Inicio: selector de elección / departamento / distrito
+  intendente/page.tsx    # Resultados de Intendente
+  concejales/page.tsx    # Resultados de Concejales + D'Hondt
+  components/            # NavBar, selectores, DHondtTable, SeatDistributionBar, ...
+lib/
+  tsje/                  # Cliente HTTP del TSJE, solver de Sucuri y tipos de la respuesta
+  db/                    # Esquema Drizzle, cliente Neon y seed de geografía/elecciones
+  sync/                  # Sincronización on-demand y en lote de snapshots
+  queries/               # Transforman un snapshot en la vista de cada página
+  dhondt/                # Método D'Hondt, cálculo de bancas y electos
+drizzle/                 # Migraciones SQL generadas por drizzle-kit
+docs/                    # Diseño (pantallas, design system), JSON de referencia y capturas
+```
+
+---
+
+## Puesta en marcha
+
+### Requisitos
+
+- Node.js 20 o superior
+- Una base PostgreSQL (recomendado: un proyecto gratuito en [Neon](https://neon.tech))
+
+### 1. Instalar dependencias
+
+```bash
+npm install
+```
+
+### 2. Configurar variables de entorno
+
+```bash
+cp .env.local.example .env.local
+```
+
+Completar `DATABASE_URL` con la cadena de conexión de Postgres:
+
+```env
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
+```
+
+### 3. Crear las tablas y cargar los datos base
+
+```bash
+npx drizzle-kit migrate   # aplica las migraciones de drizzle/
+npm run db:seed           # carga departamentos, distritos y elecciones
+```
+
+### 4. Levantar la app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3000](http://localhost:3000). La primera vez que se abre un distrito, la app pide los resultados al TSJE y los guarda.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Comando           | Descripción                             |
+| ----------------- | --------------------------------------- |
+| `npm run dev`     | Servidor de desarrollo (Turbopack)      |
+| `npm run build`   | Build de producción                     |
+| `npm run start`   | Sirve el build de producción            |
+| `npm run lint`    | ESLint                                  |
+| `npm test`        | Corre la suite de tests con Vitest      |
+| `npm run db:seed` | Carga geografía y elecciones en la base |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Cómo se reparten las bancas (método D'Hondt)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Los votos de cada lista se dividen por 1, 2, 3, … hasta la cantidad de bancas en juego.
+2. Se ordenan todos los cocientes de mayor a menor.
+3. Los _N_ cocientes más altos ganan una banca cada uno (_N_ = bancas del distrito).
+4. Dentro de cada lista, las bancas van a los candidatos con más votos preferenciales.
 
-## Deploy on Vercel
+La tabla "Asignación por el método D'Hondt" de la pantalla de Concejales muestra cada cociente y el número de orden de la banca que obtuvo.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Aviso
+
+Escrutinia es un proyecto independiente y **no está afiliado al TSJE**. Los datos provienen del TREP, que es **preliminar y no oficial**: los resultados definitivos son los del juzgamiento oficial del TSJE. El reparto de bancas es una proyección hecha con los votos escrutados hasta el momento.

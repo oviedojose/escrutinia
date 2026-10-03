@@ -4,8 +4,15 @@ import type { TsjeRespuesta } from "../tsje/types";
 
 const fakeRespuesta = (votos: number): TsjeRespuesta => ({
   totales: {
-    totalMesas: 1, mesasPublicadas: 1, blancos: 0, nulos: 0, totalVotos: votos,
-    canElectores: votos, canElectoresPublicados: votos, nocomputados: 0, tipCandidatura: 1,
+    totalMesas: 1,
+    mesasPublicadas: 1,
+    blancos: 0,
+    nulos: 0,
+    totalVotos: votos,
+    canElectores: votos,
+    canElectoresPublicados: votos,
+    nocomputados: 0,
+    tipCandidatura: 1,
   },
   candidatos: [],
   horaFormated: "16-06-2026 15:40:03",
@@ -17,17 +24,30 @@ describe("ejecutarSync", () => {
     const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
 
     const targets = [
-      { departamentoId: 0, distritoId: 0, candidatura: 1 as const },
-      { departamentoId: 11, distritoId: 13, candidatura: 2 as const },
+      { departamentoId: 0, municipioId: 0, candidatura: 1 as const },
+      { departamentoId: 11, municipioId: 13, candidatura: 2 as const },
     ];
 
-    const resultado = await ejecutarSync(1, 44, targets, { fetchResultado, guardarSnapshot });
+    const resultado = await ejecutarSync(1, 44, targets, {
+      fetchResultado,
+      guardarSnapshot,
+    });
 
     expect(resultado.exitosos).toBe(2);
     expect(resultado.fallidos).toEqual([]);
-    expect(fetchResultado).toHaveBeenCalledWith({ codeleccion: 44, candidatura: 1, departamento: 0, distrito: 0 });
+    expect(fetchResultado).toHaveBeenCalledWith({
+      codeleccion: 44,
+      candidatura: 1,
+      departamento: 0,
+      municipio: 0,
+    });
     expect(guardarSnapshot).toHaveBeenCalledWith(
-      expect.objectContaining({ eleccionId: 1, departamentoId: 0, distritoId: 0, candidatura: 1 }),
+      expect.objectContaining({
+        eleccionId: 1,
+        departamentoId: 0,
+        municipioId: 0,
+        candidatura: 1,
+      }),
     );
   });
 
@@ -39,11 +59,14 @@ describe("ejecutarSync", () => {
     const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
 
     const targets = [
-      { departamentoId: 0, distritoId: 0, candidatura: 1 as const },
-      { departamentoId: 0, distritoId: 1, candidatura: 1 as const },
+      { departamentoId: 0, municipioId: 0, candidatura: 1 as const },
+      { departamentoId: 0, municipioId: 1, candidatura: 1 as const },
     ];
 
-    const resultado = await ejecutarSync(1, 44, targets, { fetchResultado, guardarSnapshot });
+    const resultado = await ejecutarSync(1, 44, targets, {
+      fetchResultado,
+      guardarSnapshot,
+    });
 
     expect(resultado.exitosos).toBe(1);
     expect(resultado.fallidos).toHaveLength(1);
@@ -64,11 +87,15 @@ describe("ejecutarSync", () => {
 
     const targets = Array.from({ length: 10 }, (_, i) => ({
       departamentoId: 0,
-      distritoId: i,
+      municipioId: i,
       candidatura: 1 as const,
     }));
 
-    await ejecutarSync(1, 44, targets, { fetchResultado, guardarSnapshot, concurrency: 3 });
+    await ejecutarSync(1, 44, targets, {
+      fetchResultado,
+      guardarSnapshot,
+      concurrency: 3,
+    });
 
     expect(maxEnVuelo).toBeLessThanOrEqual(3);
   });

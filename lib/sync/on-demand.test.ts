@@ -13,7 +13,7 @@ const respuestaFalsa: TsjeRespuesta = {
     canElectores: 1000,
     canElectoresPublicados: 1000,
     nocomputados: 0,
-    tipoCandidatura: 1,
+    tipCandidatura: 1,
   },
   candidatos: [],
   horaFormated: "25-09-2026 10:00:00",

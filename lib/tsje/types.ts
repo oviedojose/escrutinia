@@ -9,7 +9,7 @@ export type TsjeTotales = {
   canElectores: number;
   canElectoresPublicados: number;
   nocomputados: number;
-  tipoCandidatura: TipoCandidatura;
+  tipCandidatura: TipoCandidatura;
 };
 
 export type TsjeCandidatoPref = {

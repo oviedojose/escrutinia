@@ -1,9 +1,11 @@
+import { notFound } from "next/navigation";
 import { db } from "@/lib/db/client";
 import { elecciones, departamentos, municipios } from "@/lib/db/schema";
 import { obtenerOSincronizarSnapshot } from "@/lib/sync/on-demand";
 import { depsSincronizacionOnDemandReales } from "@/lib/sync/on-demand-deps";
 import { construirVistaConcejales } from "@/lib/queries/concejales";
 import { resolverEleccionSeleccionada } from "@/lib/queries/eleccion-seleccionada";
+import { resolverUbicacion } from "@/lib/queries/ubicacion";
 import { bancasPorDefecto } from "@/lib/dhondt/bancas";
 import { NavBar } from "../components/NavBar";
 import { FiltrosPendingProvider } from "../components/FiltrosPendingContext";
@@ -21,14 +23,12 @@ export default async function ConcejalesPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    departamento?: string;
-    municipio?: string;
+    departamento?: string | string[];
+    municipio?: string | string[];
     eleccion?: string;
   }>;
 }) {
   const params = await searchParams;
-  const departamentoId = Number(params.departamento ?? 0);
-  const municipioId = Number(params.municipio ?? 0);
 
   const [todasElecciones, todosDepartamentos, todosMunicipios] =
     await Promise.all([
@@ -36,6 +36,13 @@ export default async function ConcejalesPage({
       db.select().from(departamentos),
       db.select().from(municipios),
     ]);
+
+  const ubicacion = resolverUbicacion(params, todosMunicipios);
+  if (!ubicacion) {
+    notFound();
+  }
+  const { departamentoId, municipioId } = ubicacion;
+
   const eleccionSeleccionada = resolverEleccionSeleccionada(
     todasElecciones,
     params.eleccion,

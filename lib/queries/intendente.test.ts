@@ -12,7 +12,7 @@ const respuesta: TsjeRespuesta = {
     canElectores: 66150,
     canElectoresPublicados: 66150,
     nocomputados: 0,
-    tipoCandidatura: 1,
+    tipCandidatura: 1,
   },
   candidatos: [
     {
