@@ -72,7 +72,7 @@ export default async function InicioPage({
 
       <nav>
         <a href={`/intendente${query}`}>Ver resultados de Intendente</a>
-        <a href="">Ver resultados de Concejales</a>
+        <a href={`/concejales${query}`}>Ver resultados de Concejales</a>
       </nav>
     </main>
   );
