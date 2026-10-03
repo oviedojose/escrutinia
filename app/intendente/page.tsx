@@ -1,68 +1,36 @@
-import { notFound } from "next/navigation";
-import { db } from "@/lib/db/client";
-import { departamentos, elecciones, municipios } from "@/lib/db/schema";
-import { resolverEleccionSeleccionada } from "@/lib/queries/eleccion-seleccionada";
-import { resolverUbicacion } from "@/lib/queries/ubicacion";
+import {
+  cargarContextoResultados,
+  MENSAJE_SIN_ELECCION,
+  type ParamsResultados,
+} from "@/lib/queries/contexto-resultados";
 import { obtenerOSincronizarSnapshot } from "@/lib/sync/on-demand";
 import { depsSincronizacionOnDemandReales } from "@/lib/sync/on-demand-deps";
-import { NavBar } from "../components/NavBar";
-import { FiltrosPendingProvider } from "../components/FiltrosPendingContext";
-import { EleccionSelector } from "../components/EleccionSelector";
-import { FiltrosPendingIndicator } from "../components/FiltrosPendingIndicator";
-import { ResultadosSelector } from "../components/ResultadosSelector";
+import { ResultadosHeader } from "../components/ResultadosHeader";
 import { construirVistaIntendente } from "@/lib/queries/intendente";
 import { StatTile } from "../components/StatTile";
-import { VoteBar } from "../components/NoteBar";
+import { VoteBar } from "../components/VoteBar";
 import { PartyChip } from "../components/PartyChip";
 
 export const dynamic = "force-dynamic";
 
-export default async function InicioPage({
+export default async function IntendentePage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    departamento?: string | string[];
-    municipio?: string | string[];
-    eleccion?: string;
-  }>;
+  searchParams: Promise<ParamsResultados>;
 }) {
-  const params = await searchParams;
-  const [todosDepartamentos, todosMunicipios, todasElecciones] =
-    await Promise.all([
-      db.select().from(departamentos),
-      db.select().from(municipios),
-      db.select().from(elecciones),
-    ]);
-
-  const ubicacion = resolverUbicacion(params, todosMunicipios);
-  if (!ubicacion) {
-    notFound();
-  }
-  const { departamentoId, municipioId } = ubicacion;
-
-  const eleccionSeleccionada = resolverEleccionSeleccionada(
-    todasElecciones,
-    params.eleccion,
-  );
-
-  const municipio = todosMunicipios.find(
-    (m) => m.departamentoId === departamentoId && m.id === municipioId,
-  );
-  const departamento = todosDepartamentos.find((d) => d.id === departamentoId);
+  const contexto = await cargarContextoResultados(await searchParams);
+  const { eleccionSeleccionada } = contexto;
 
   if (!eleccionSeleccionada) {
-    return (
-      <main>
-        No hay ninguna elección configurada. Agregá una en /configuracion.
-      </main>
-    );
+    return <main className="esc-page">{MENSAJE_SIN_ELECCION}</main>;
   }
+  const contextoConEleccion = { ...contexto, eleccionSeleccionada };
 
   const snapshot = await obtenerOSincronizarSnapshot(
     eleccionSeleccionada.id,
     eleccionSeleccionada.codeleccion,
-    departamentoId,
-    municipioId,
+    contexto.departamentoId,
+    contexto.municipioId,
     1,
     depsSincronizacionOnDemandReales,
   );
@@ -70,30 +38,10 @@ export default async function InicioPage({
   if (!snapshot) {
     return (
       <main className="esc-page">
-        <NavBar
-          active="intendente"
-          departamentoId={departamentoId}
-          municipioId={municipioId}
-          codeleccion={eleccionSeleccionada.codeleccion}
-        />
-        <FiltrosPendingProvider>
-          <div className="esc-filtros">
-            <EleccionSelector
-              elecciones={todasElecciones}
-              codeleccionActual={eleccionSeleccionada.codeleccion}
-            />
-            <ResultadosSelector
-              departamentos={todosDepartamentos}
-              municipios={todosMunicipios}
-              departamentoId={departamentoId}
-              municipioId={municipioId}
-            />
-          </div>
-          <FiltrosPendingIndicator />
-        </FiltrosPendingProvider>
+        <ResultadosHeader active="intendente" contexto={contextoConEleccion} />
         <p>
-          Sin datos todavía para {municipio?.nombre}, {departamento?.nombre} en{" "}
-          {eleccionSeleccionada.nombre}.
+          Sin datos todavía para {contexto.nombreMunicipio},{" "}
+          {contexto.nombreDepartamento} en {eleccionSeleccionada.nombre}.
         </p>
       </main>
     );
@@ -103,31 +51,14 @@ export default async function InicioPage({
 
   return (
     <main className="esc-page">
-      <NavBar
+      <ResultadosHeader
         active="intendente"
+        contexto={contextoConEleccion}
         statusTimestamp={vista.horaFormated}
-        departamentoId={departamentoId}
-        municipioId={municipioId}
-        codeleccion={eleccionSeleccionada.codeleccion}
       />
-      <FiltrosPendingProvider>
-        <div className="esc-filtros">
-          <EleccionSelector
-            elecciones={todasElecciones}
-            codeleccionActual={eleccionSeleccionada.codeleccion}
-          />
-          <ResultadosSelector
-            departamentos={todosDepartamentos}
-            municipios={todosMunicipios}
-            departamentoId={departamentoId}
-            municipioId={municipioId}
-          />
-        </div>
-        <FiltrosPendingIndicator />
-      </FiltrosPendingProvider>
       <h1>Resultados de Intendente</h1>
       <p>
-        {municipio?.nombre}, {departamento?.nombre} -
+        {contexto.nombreMunicipio}, {contexto.nombreDepartamento} —{" "}
         {eleccionSeleccionada.nombre}
       </p>
       <div className="esc-stat-grid">

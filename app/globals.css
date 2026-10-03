@@ -764,7 +764,7 @@ body { background: var(--surface-0); color: var(--ink-900); font-family: var(--f
   }
 }
 
-.esc-filtros .esc-distrito-selector {
+.esc-filtros .esc-municipio-selector {
   flex: 2;
   min-width: 320px;
 }
@@ -798,12 +798,12 @@ body { background: var(--surface-0); color: var(--ink-900); font-family: var(--f
 
 /* DistritoSelector --------------------------------------------------------- */
 
-.esc-distrito-selector {
+.esc-municipio-selector {
   display: flex;
   gap: var(--space-4);
 }
 
-.esc-distrito-selector label {
+.esc-municipio-selector label {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -816,7 +816,7 @@ body { background: var(--surface-0); color: var(--ink-900); font-family: var(--f
   letter-spacing: 0.04em;
 }
 
-.esc-distrito-selector select {
+.esc-municipio-selector select {
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 400;
@@ -828,94 +828,3 @@ body { background: var(--surface-0); color: var(--ink-900); font-family: var(--f
   border: 1px solid var(--control-border);
   background: var(--surface-100);
 }
-
-/* Configuración ------------------------------------------------------------ */
-
-.esc-configuracion {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  font-family: var(--font-sans);
-}
-
-.esc-configuracion section {
-  background: var(--surface-100);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-6);
-}
-
-.esc-configuracion section h2 {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 18px;
-  color: var(--ink-900);
-  margin: 0 0 var(--space-4);
-}
-
-.esc-configuracion select {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--control-border);
-  background: var(--surface-100);
-  color: var(--ink-900);
-}
-
-.esc-configuracion fieldset {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
-  margin: 0 0 var(--space-3);
-}
-
-.esc-configuracion fieldset:last-child {
-  margin-bottom: 0;
-}
-
-.esc-configuracion legend {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--ink-900);
-  padding: 0 var(--space-2);
-}
-
-.esc-configuracion legend button {
-  margin-left: var(--space-2);
-  font-size: 12px;
-  padding: 2px var(--space-2);
-}
-
-.esc-configuracion label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin: var(--space-1) var(--space-4) var(--space-1) 0;
-  font-size: 13px;
-  color: var(--ink-700);
-}
-
-.esc-configuracion button {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: 14px;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--control-border);
-  background: var(--surface-100);
-  color: var(--ink-900);
-  cursor: pointer;
-}
-
-.esc-configuracion > button {
-  align-self: flex-start;
-  margin-right: var(--space-3);
-}
-
-.esc-configuracion [role="status"] {
-  font-size: 13px;
-  color: var(--accent-text);
-  margin: 0;
-}
-

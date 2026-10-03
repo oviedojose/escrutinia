@@ -8,12 +8,12 @@ export interface ChallengeSucuri {
 }
 
 /**
- * The TSJE site is behind a Sucuri firewall that, when a request is made
- * without a valid session cookie, returns a "proof-of-work" challenge: you
- * must find an n such that sha256(cs + n) starts with `cd` zero bits in
- * hexadecimal.
- * Solving it and sending it back (see sucuri-session.ts) makes Sucuri issue
- * a valid session cookie for ~24 hours.
+ * El sitio del TSJE está detrás de un firewall Sucuri que, ante un request
+ * sin cookie de sesión válida, devuelve un desafío de "proof-of-work": hay
+ * que encontrar un n tal que sha256(cs + n) empiece con `cd` ceros
+ * hexadecimales.
+ * Resolverlo y enviarlo de vuelta (ver sucuri-session.ts) hace que Sucuri
+ * entregue una cookie de sesión válida por ~24 horas.
  */
 
 export function resolveProofOfWork(cs: string, cd: number): number {

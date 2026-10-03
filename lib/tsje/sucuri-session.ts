@@ -30,7 +30,7 @@ function extraerCookieSucuri(setCookieHeaders: string[]): string | null {
   return null;
 }
 
-async function resolverChallengeYObtenerCoookie(
+async function resolverChallengeYObtenerCookie(
   fetchImpl: typeof fetch,
   signal?: AbortSignal,
 ): Promise<string> {
@@ -82,7 +82,7 @@ export async function obtenerCookieSucuri(
   }
 
   if (!cookieEnCurso) {
-    const pedido = resolverChallengeYObtenerCoookie(fetchImpl, signal)
+    const pedido = resolverChallengeYObtenerCookie(fetchImpl, signal)
       .then((valor) => {
         // Solo si nadie invalidó mientras resolvíamos.
         if (cookieEnCurso === pedido) {

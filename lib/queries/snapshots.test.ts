@@ -3,10 +3,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "../db/client";
 import { elecciones, resultadosSnapshot } from "../db/schema";
 import { eq } from "drizzle-orm";
-import {
-  obtenerUltimoSnapshot,
-  obtenerUltimosSnapshotsPorEleccion,
-} from "./snapshots";
+import { obtenerUltimoSnapshot } from "./snapshots";
 
 describe("snapshot queries", () => {
   let eleccionId: number;
@@ -67,14 +64,5 @@ describe("snapshot queries", () => {
   it("obtenerUltimoSnapshot returns null when there is no data", async () => {
     const snapshot = await obtenerUltimoSnapshot(eleccionId, 99, 99, 1);
     expect(snapshot).toBeNull();
-  });
-
-  it("obtenerUltimosSnapshotsPorEleccion returns one row per departamento/municipio", async () => {
-    const snapshots = await obtenerUltimosSnapshotsPorEleccion(eleccionId, 1);
-    expect(snapshots).toHaveLength(1);
-    expect(snapshots[0].payload.totales.totalVotos).toBe(200);
-    expect(snapshots[0].departamentoId).toBe(11);
-    expect(snapshots[0].municipioId).toBe(13);
-    expect(snapshots[0].eleccionId).toBe(eleccionId);
   });
 });

@@ -1,7 +1,8 @@
 import { db } from "@/lib/db/client";
 import { departamentos, elecciones, municipios } from "@/lib/db/schema";
 import { resolverEleccionSeleccionada } from "@/lib/queries/eleccion-seleccionada";
-import { InicioSelectorForm } from "./components/InicioSelectorForm";
+import { resolverUbicacion } from "@/lib/queries/ubicacion";
+import { UbicacionSelector } from "./components/UbicacionSelector";
 import { FiltrosPendingProvider } from "./components/FiltrosPendingContext";
 import { EleccionSelector } from "./components/EleccionSelector";
 import { FiltrosPendingIndicator } from "./components/FiltrosPendingIndicator";
@@ -12,8 +13,8 @@ export default async function InicioPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    departamento?: string;
-    municipio?: string;
+    departamento?: string | string[];
+    municipio?: string | string[];
     eleccion?: string;
   }>;
 }) {
@@ -25,14 +26,11 @@ export default async function InicioPage({
       db.select().from(elecciones),
     ]);
 
-  const departamentoId = Number(
-    params.departamento ?? todosDepartamentos[0]?.id ?? 0,
-  );
-  const municipioId = Number(
-    params.municipio ??
-      todosMunicipios.find((m) => m.departamentoId === departamentoId)?.id ??
-      0,
-  );
+  // En el inicio una ubicación inválida no es un error: se cae a Asunción.
+  const { departamentoId, municipioId } = resolverUbicacion(
+    params,
+    todosMunicipios,
+  ) ?? { departamentoId: 0, municipioId: 0 };
 
   const eleccionSeleccionada = resolverEleccionSeleccionada(
     todasElecciones,
@@ -61,7 +59,7 @@ export default async function InicioPage({
           />
         )}
 
-        <InicioSelectorForm
+        <UbicacionSelector
           departamentos={todosDepartamentos}
           municipios={todosMunicipios}
           departamentoId={departamentoId}

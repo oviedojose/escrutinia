@@ -1,31 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { MunicipioSelector } from "./MunicipioSelector";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFiltrosPending } from "./FiltrosPendingContext";
+import { MunicipioSelector } from "./MunicipioSelector";
 
-interface InicioSelectorFormProps {
+interface UbicacionSelectorProps {
   departamentos: { id: number; nombre: string }[];
   municipios: { id: number; departamentoId: number; nombre: string }[];
   departamentoId: number;
   municipioId: number;
 }
 
-export function InicioSelectorForm({
+/**
+ * Selector de departamento/municipio que guarda la elección en la URL de la
+ * página actual (inicio o resultados).
+ */
+export function UbicacionSelector({
   departamentos,
   municipios,
   departamentoId,
   municipioId,
-}: InicioSelectorFormProps) {
+}: UbicacionSelectorProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { runTransition } = useFiltrosPending();
 
-  // See ResultadosSelector for why this is local state, reset from props
-  // during render rather than in an effect: it lets the distrito <select>
-  // re-filter instantly from the already-loaded `distritos` list instead of
-  // showing the previous departamento's distritos until navigation finishes.
+  // Selección local que se actualiza al instante, para que el <select> de
+  // municipios se re-filtre (con la lista ya cargada) apenas el usuario
+  // elige un departamento, en lugar de mostrar los municipios del
+  // departamento anterior hasta que termine la navegación. Se resetea desde
+  // las props durante el render (no en un effect) para que también tome
+  // navegaciones externas, como atrás/adelante del navegador o un link de
+  // la NavBar.
   const [localDepartamentoId, setLocalDepartamentoId] =
     useState(departamentoId);
   const [localMunicipioId, setLocalMunicipioId] = useState(municipioId);
@@ -55,7 +63,7 @@ export function InicioSelectorForm({
         const params = new URLSearchParams(searchParams.toString());
         params.set("departamento", String(d));
         params.set("municipio", String(muni));
-        runTransition(() => router.push(`/?${params.toString()}`));
+        runTransition(() => router.push(`${pathname}?${params.toString()}`));
       }}
     />
   );

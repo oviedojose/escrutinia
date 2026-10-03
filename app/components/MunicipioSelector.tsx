@@ -29,7 +29,7 @@ export function MunicipioSelector({
   );
 
   return (
-    <div className="esc-distrito-selector">
+    <div className="esc-municipio-selector">
       <label>
         Departamento
         <select

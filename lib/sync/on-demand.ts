@@ -44,10 +44,10 @@ export interface DepsSincronizacionOnDemand {
  * comparten un único pedido al TSJE (ver sincronizacionesEnCurso), en vez de
  * disparar cada una su propio fetch e INSERT.
  *
- * Sin implementación real por defecto (a propósito, mismo patrón que
- * ejecutarSync en service.ts): las deps reales viven en on-demand-deps.ts,
- * que sí importa lib/db/client.ts -- mantenerlas separadas es lo que deja
- * este archivo (y sus tests) libres de necesitar DATABASE_URL.
+ * Sin implementación real por defecto (a propósito): las deps reales viven
+ * en on-demand-deps.ts, que sí importa lib/db/client.ts -- mantenerlas
+ * separadas es lo que deja este archivo (y sus tests) libres de necesitar
+ * DATABASE_URL.
  */
 export async function obtenerOSincronizarSnapshot(
   eleccionId: number,

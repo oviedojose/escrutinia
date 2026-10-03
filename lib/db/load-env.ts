@@ -1,15 +1,15 @@
-// Scoped .env.local loader for DB-touching test files only.
+// Carga .env.local solo para los tests que tocan la base.
 //
-// Most tests in this repo are pure (no DB import), so vitest.setup.ts
-// intentionally does NOT load .env.local globally (see Task 4's history:
-// a global loader was added then reverted in favor of decoupling pure
-// logic from lib/db/client.ts). A handful of genuinely integration-style
-// tests (e.g. lib/queries/snapshots.test.ts) do need DATABASE_URL to run
-// under `npm test`. Those files import this module first, before
-// importing anything that transitively loads lib/db/client.ts, so the
-// env var is populated before client.ts's eager check runs.
+// La mayoría de los tests del repo son puros (no importan la base), así que
+// vitest.setup.ts a propósito NO carga .env.local de forma global: se probó
+// y se revirtió para mantener la lógica pura desacoplada de
+// lib/db/client.ts. Los pocos tests de integración (p. ej.
+// lib/queries/snapshots.test.ts) sí necesitan DATABASE_URL para correr con
+// `npm test`. Esos archivos importan este módulo primero, antes de cualquier
+// cosa que cargue lib/db/client.ts, para que la variable exista antes del
+// chequeo que client.ts hace al importarse.
 //
-// No credential values are ever logged here.
+// Nunca se loguea ningún valor de credenciales.
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 

@@ -1,17 +1,13 @@
-import { notFound } from "next/navigation";
-import { db } from "@/lib/db/client";
-import { elecciones, departamentos, municipios } from "@/lib/db/schema";
+import {
+  cargarContextoResultados,
+  MENSAJE_SIN_ELECCION,
+  type ParamsResultados,
+} from "@/lib/queries/contexto-resultados";
 import { obtenerOSincronizarSnapshot } from "@/lib/sync/on-demand";
 import { depsSincronizacionOnDemandReales } from "@/lib/sync/on-demand-deps";
+import { ResultadosHeader } from "../components/ResultadosHeader";
 import { construirVistaConcejales } from "@/lib/queries/concejales";
-import { resolverEleccionSeleccionada } from "@/lib/queries/eleccion-seleccionada";
-import { resolverUbicacion } from "@/lib/queries/ubicacion";
 import { bancasPorDefecto } from "@/lib/dhondt/bancas";
-import { NavBar } from "../components/NavBar";
-import { FiltrosPendingProvider } from "../components/FiltrosPendingContext";
-import { EleccionSelector } from "../components/EleccionSelector";
-import { ResultadosSelector } from "../components/ResultadosSelector";
-import { FiltrosPendingIndicator } from "../components/FiltrosPendingIndicator";
 import { StatTile } from "../components/StatTile";
 import { SeatDistributionBar } from "../components/SeatDistributionBar";
 import { DHondtTable } from "../components/DHondtTable";
@@ -22,46 +18,21 @@ export const dynamic = "force-dynamic";
 export default async function ConcejalesPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    departamento?: string | string[];
-    municipio?: string | string[];
-    eleccion?: string;
-  }>;
+  searchParams: Promise<ParamsResultados>;
 }) {
-  const params = await searchParams;
-
-  const [todasElecciones, todosDepartamentos, todosMunicipios] =
-    await Promise.all([
-      db.select().from(elecciones),
-      db.select().from(departamentos),
-      db.select().from(municipios),
-    ]);
-
-  const ubicacion = resolverUbicacion(params, todosMunicipios);
-  if (!ubicacion) {
-    notFound();
-  }
-  const { departamentoId, municipioId } = ubicacion;
-
-  const eleccionSeleccionada = resolverEleccionSeleccionada(
-    todasElecciones,
-    params.eleccion,
-  );
-  // distritos.id is only unique WITHIN a departamentoId (composite PK) -- match both.
-  const municipio = todosMunicipios.find(
-    (m) => m.departamentoId === departamentoId && m.id === municipioId,
-  );
-  const departamento = todosDepartamentos.find((d) => d.id === departamentoId);
+  const contexto = await cargarContextoResultados(await searchParams);
+  const { eleccionSeleccionada } = contexto;
 
   if (!eleccionSeleccionada) {
-    return <main>No hay ninguna elección configurada.</main>;
+    return <main className="esc-page">{MENSAJE_SIN_ELECCION}</main>;
   }
+  const contextoConEleccion = { ...contexto, eleccionSeleccionada };
 
   const snapshot = await obtenerOSincronizarSnapshot(
     eleccionSeleccionada.id,
     eleccionSeleccionada.codeleccion,
-    departamentoId,
-    municipioId,
+    contexto.departamentoId,
+    contexto.municipioId,
     2,
     depsSincronizacionOnDemandReales,
   );
@@ -69,30 +40,10 @@ export default async function ConcejalesPage({
   if (!snapshot) {
     return (
       <main className="esc-page">
-        <NavBar
-          active="concejales"
-          departamentoId={departamentoId}
-          municipioId={municipioId}
-          codeleccion={eleccionSeleccionada.codeleccion}
-        />
-        <FiltrosPendingProvider>
-          <div className="esc-filtros">
-            <EleccionSelector
-              elecciones={todasElecciones}
-              codeleccionActual={eleccionSeleccionada.codeleccion}
-            />
-            <ResultadosSelector
-              departamentos={todosDepartamentos}
-              municipios={todosMunicipios}
-              departamentoId={departamentoId}
-              municipioId={municipioId}
-            />
-          </div>
-          <FiltrosPendingIndicator />
-        </FiltrosPendingProvider>
+        <ResultadosHeader active="concejales" contexto={contextoConEleccion} />
         <p>
-          Sin datos todavía para {municipio?.nombre}, {departamento?.nombre} en{" "}
-          {eleccionSeleccionada.nombre}.
+          Sin datos todavía para {contexto.nombreMunicipio},{" "}
+          {contexto.nombreDepartamento} en {eleccionSeleccionada.nombre}.
         </p>
       </main>
     );
@@ -100,36 +51,19 @@ export default async function ConcejalesPage({
 
   const vista = construirVistaConcejales(
     snapshot.payload,
-    bancasPorDefecto(departamentoId, municipioId),
+    bancasPorDefecto(contexto.departamentoId, contexto.municipioId),
   );
 
   return (
     <main className="esc-page">
-      <NavBar
+      <ResultadosHeader
         active="concejales"
+        contexto={contextoConEleccion}
         statusTimestamp={vista.horaFormated}
-        departamentoId={departamentoId}
-        municipioId={municipioId}
-        codeleccion={eleccionSeleccionada.codeleccion}
       />
-      <FiltrosPendingProvider>
-        <div className="esc-filtros">
-          <EleccionSelector
-            elecciones={todasElecciones}
-            codeleccionActual={eleccionSeleccionada.codeleccion}
-          />
-          <ResultadosSelector
-            departamentos={todosDepartamentos}
-            municipios={todosMunicipios}
-            departamentoId={departamentoId}
-            municipioId={municipioId}
-          />
-        </div>
-        <FiltrosPendingIndicator />
-      </FiltrosPendingProvider>
       <h1>Resultados de Concejales</h1>
       <p>
-        {municipio?.nombre}, {departamento?.nombre} —{" "}
+        {contexto.nombreMunicipio}, {contexto.nombreDepartamento} —{" "}
         {eleccionSeleccionada.nombre}
       </p>
       <p className="esc-disclaimer">
