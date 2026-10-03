@@ -11,7 +11,7 @@ interface NavBarProps {
 
 function buildQuery(...parts: (string | undefined)[]): string {
   const nonEmpty = parts.filter((p): p is string => Boolean(p));
-  return nonEmpty.length > 0 ? `${nonEmpty.join("&")}` : "";
+  return nonEmpty.length > 0 ? `?${nonEmpty.join("&")}` : "";
 }
 
 export function NavBar({
@@ -23,7 +23,7 @@ export function NavBar({
 }: NavBarProps) {
   const municipioQuery =
     departamentoId != null && municipioId != null
-      ? `departamento=${departamentoId}&distrito=${municipioId}`
+      ? `departamento=${departamentoId}&municipio=${municipioId}`
       : undefined;
 
   const eleccionQuery =
@@ -38,7 +38,7 @@ export function NavBar({
     {
       href: `/concejales${buildQuery(municipioQuery, eleccionQuery)}`,
       key: "concejales",
-      label: "concejales",
+      label: "Concejales",
     },
   ] as const;
 

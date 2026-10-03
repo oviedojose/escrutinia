@@ -43,7 +43,7 @@ export default async function InicioPage({
     ? `eleccion=${eleccionSeleccionada.codeleccion}`
     : "";
 
-  const query = `?departamento=${departamentoId}&distrito=${municipioId}&${eleccionQuery}`;
+  const query = `?departamento=${departamentoId}&municipio=${municipioId}&${eleccionQuery}`;
 
   return (
     <main className="esc-inicio">

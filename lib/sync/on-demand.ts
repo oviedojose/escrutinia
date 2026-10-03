@@ -1,6 +1,8 @@
 import type { TipoCandidatura, TsjeParams, TsjeRespuesta } from "../tsje/types";
 import type { SnapshotRow } from "../queries/snapshots";
 
+export const VIGENCIA_SNAPSHOT_MS = 15 * 60 * 1000;
+
 export interface DepsSincronizacionOnDemand {
   obtenerSnapshotExistente: (
     eleccionId: number,
@@ -16,16 +18,18 @@ export interface DepsSincronizacionOnDemand {
     candidatura: 1 | 2;
     payload: TsjeRespuesta;
   }) => Promise<void>;
+  ahora?: () => Date;
 }
 
 /**
- * Si ya hay un snapshot guardado para esta combinación, lo devuelve tal
- * cual. Si no, lo trae del TSJE en el momento (on-demand) y lo guarda antes
- * de devolverlo -- así una página que nunca fue sincronizada igual muestra
- * resultados reales en vez de "sin datos todavía", sin esperar a que
- * alguien corra un sync manual desde Configuración. Si el TSJE falla (o
- * genuinamente no hay datos para esa combinación), devuelve null como
- * antes y la página cae al mensaje de "sin datos".
+ * Si el último snapshot guardado para esta combinación se sincronizó hace
+ * menos de VIGENCIA_SNAPSHOT_MS (15 minutos), lo devuelve tal cual. Si no
+ * existe o ya venció, lo trae del TSJE en el momento (on-demand) y lo guarda
+ * antes de devolverlo -- así una página que nunca fue sincronizada igual
+ * muestra resultados reales, y durante el escrutinio los datos no quedan
+ * congelados en la primera visita. Si el TSJE falla, devuelve el último
+ * snapshot guardado aunque esté vencido (mejor datos viejos que ninguno), o
+ * null si nunca hubo uno, y la página cae al mensaje de "sin datos".
  *
  * Sin implementación real por defecto (a propósito, mismo patrón que
  * ejecutarSync en service.ts): las deps reales viven en on-demand-deps.ts,
@@ -40,13 +44,18 @@ export async function obtenerOSincronizarSnapshot(
   candidatura: TipoCandidatura,
   deps: DepsSincronizacionOnDemand,
 ): Promise<SnapshotRow | null> {
+  const ahora = deps.ahora?.() ?? new Date();
   const existente = await deps.obtenerSnapshotExistente(
     eleccionId,
     departamentoId,
     municipioId,
     candidatura,
   );
-  if (existente) {
+  if (
+    existente &&
+    ahora.getTime() - new Date(existente.sincronizadoEn).getTime() <
+      VIGENCIA_SNAPSHOT_MS
+  ) {
     return existente;
   }
 
@@ -65,7 +74,7 @@ export async function obtenerOSincronizarSnapshot(
       payload,
     });
   } catch {
-    return null;
+    return existente;
   }
 
   return deps.obtenerSnapshotExistente(
