@@ -13,6 +13,13 @@ interface CookieCacheada {
 
 let cookieCacheada: CookieCacheada | null = null;
 
+/**
+ * Resolución del desafío en curso, compartida: si varias visitas encuentran
+ * la cookie vencida a la vez, el proof-of-work se resuelve una sola vez (por
+ * instancia del servidor) y todas esperan el mismo resultado.
+ */
+let cookieEnCurso: Promise<string> | null = null;
+
 function extraerCookieSucuri(setCookieHeaders: string[]): string | null {
   for (const header of setCookieHeaders) {
     const parNombreValor = header.split(";")[0]?.trim();
@@ -25,11 +32,13 @@ function extraerCookieSucuri(setCookieHeaders: string[]): string | null {
 
 async function resolverChallengeYObtenerCoookie(
   fetchImpl: typeof fetch,
+  signal?: AbortSignal,
 ): Promise<string> {
   const resChallenge = await fetchImpl(CHALLENGE_URL, {
     headers: {
       "User-Agent": USER_AGENT,
     },
+    signal,
   });
 
   const html = await resChallenge.text();
@@ -49,6 +58,7 @@ async function resolverChallengeYObtenerCoookie(
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: `cap-token=${encodeURIComponent(token)}`,
+    signal,
   });
 
   const setCookieHeaders = resSolve.headers.getSetCookie?.() ?? [];
@@ -64,23 +74,34 @@ async function resolverChallengeYObtenerCoookie(
 }
 
 export async function obtenerCookieSucuri(
+  signal?: AbortSignal,
   fetchImpl: typeof fetch = fetch,
 ): Promise<string> {
-  const ahora = Date.now();
-  if (cookieCacheada && cookieCacheada.expiraEn > ahora) {
+  if (cookieCacheada && cookieCacheada.expiraEn > Date.now()) {
     return cookieCacheada.valor;
   }
 
-  const valor = await resolverChallengeYObtenerCoookie(fetchImpl);
+  if (!cookieEnCurso) {
+    const pedido = resolverChallengeYObtenerCoookie(fetchImpl, signal)
+      .then((valor) => {
+        // Solo si nadie invalidó mientras resolvíamos.
+        if (cookieEnCurso === pedido) {
+          cookieCacheada = { valor, expiraEn: Date.now() + MARGEN_CACHE_MS };
+        }
+        return valor;
+      })
+      .finally(() => {
+        if (cookieEnCurso === pedido) {
+          cookieEnCurso = null;
+        }
+      });
+    cookieEnCurso = pedido;
+  }
 
-  cookieCacheada = {
-    valor,
-    expiraEn: ahora + MARGEN_CACHE_MS,
-  };
-
-  return valor;
+  return cookieEnCurso;
 }
 
 export function invalidarCookieSucuri(): void {
   cookieCacheada = null;
+  cookieEnCurso = null;
 }

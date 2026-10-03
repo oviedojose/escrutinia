@@ -76,4 +76,47 @@ describe("fetchResultadoTsje", () => {
     });
     expect(result.totales.totalVotos).toBe(132736);
   });
+
+  it("pasa una señal de timeout a la cookie y al fetch", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(intendenteSample),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const obtenerCookieMock = vi.fn().mockResolvedValue("cookie");
+
+    await fetchResultadoTsje(
+      { codeleccion: 44, candidatura: 1, departamento: 11, municipio: 13 },
+      obtenerCookieMock,
+    );
+
+    const signalCookie = obtenerCookieMock.mock.calls[0][0];
+    const signalFetch = (fetchMock.mock.calls[0][1] as RequestInit).signal;
+    expect(signalCookie).toBeInstanceOf(AbortSignal);
+    expect(signalFetch).toBe(signalCookie);
+  });
+
+  it("si el TSJE no responde dentro del timeout, aborta con error", async () => {
+    // fetch que nunca responde, salvo que lo aborten (como el fetch real).
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(init.signal?.reason),
+            );
+          }),
+      ),
+    );
+
+    await expect(
+      fetchResultadoTsje(
+        { codeleccion: 44, candidatura: 1, departamento: 11, municipio: 13 },
+        cookieDePrueba,
+        20,
+      ),
+    ).rejects.toThrow(/timed out|timeout/i);
+  });
 });

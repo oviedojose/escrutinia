@@ -136,4 +136,89 @@ describe("obtenerOSincronizarSnapshot", () => {
     expect(resultado).toBeNull();
     expect(guardarSnapshot).not.toHaveBeenCalled();
   });
+
+  describe("visitas simultáneas", () => {
+    function pedidoPendiente<T>() {
+      let resolver!: (v: T) => void;
+      let rechazar!: (e: unknown) => void;
+      const promesa = new Promise<T>((res, rej) => {
+        resolver = res;
+        rechazar = rej;
+      });
+      return { promesa, resolver, rechazar };
+    }
+
+    it("dos visitas con el snapshot vencido comparten un único pedido al TSJE", async () => {
+      const snapshotViejo = snapshotSincronizadoHace(30);
+      const snapshotNuevo = snapshotSincronizadoHace(0, 2);
+      const obtenerSnapshotExistente = vi
+        .fn()
+        .mockResolvedValueOnce(snapshotViejo)
+        .mockResolvedValueOnce(snapshotViejo)
+        .mockResolvedValue(snapshotNuevo);
+      const tsje = pedidoPendiente<TsjeRespuesta>();
+      const fetchResultado = vi.fn().mockReturnValue(tsje.promesa);
+      const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
+      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, ahora };
+
+      const visitaA = obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
+      const visitaB = obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
+      tsje.resolver(respuestaFalsa);
+
+      expect(await visitaA).toBe(snapshotNuevo);
+      expect(await visitaB).toBe(snapshotNuevo);
+      expect(fetchResultado).toHaveBeenCalledTimes(1);
+      expect(guardarSnapshot).toHaveBeenCalledTimes(1);
+    });
+
+    it("combinaciones distintas no comparten el pedido", async () => {
+      const obtenerSnapshotExistente = vi.fn().mockResolvedValue(null);
+      const fetchResultado = vi.fn().mockResolvedValue(respuestaFalsa);
+      const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
+      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, ahora };
+
+      await Promise.all([
+        obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps),
+        obtenerOSincronizarSnapshot(1, 44, 11, 13, 2, deps),
+      ]);
+
+      expect(fetchResultado).toHaveBeenCalledTimes(2);
+    });
+
+    it("al terminar el pedido se libera: la siguiente visita con snapshot vencido vuelve a consultar", async () => {
+      const snapshotViejo = snapshotSincronizadoHace(30);
+      const obtenerSnapshotExistente = vi.fn().mockResolvedValue(snapshotViejo);
+      const fetchResultado = vi.fn().mockResolvedValue(respuestaFalsa);
+      const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
+      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, ahora };
+
+      await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
+      await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
+
+      expect(fetchResultado).toHaveBeenCalledTimes(2);
+    });
+
+    it("si el pedido compartido falla, ambas visitas reciben el snapshot viejo y el pedido se libera", async () => {
+      const snapshotViejo = snapshotSincronizadoHace(30);
+      const obtenerSnapshotExistente = vi.fn().mockResolvedValue(snapshotViejo);
+      const tsje = pedidoPendiente<TsjeRespuesta>();
+      const fetchResultado = vi
+        .fn()
+        .mockReturnValueOnce(tsje.promesa)
+        .mockResolvedValue(respuestaFalsa);
+      const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
+      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, ahora };
+
+      const visitaA = obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
+      const visitaB = obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
+      tsje.rechazar(new Error("TSJE timeout"));
+
+      expect(await visitaA).toBe(snapshotViejo);
+      expect(await visitaB).toBe(snapshotViejo);
+      expect(fetchResultado).toHaveBeenCalledTimes(1);
+
+      await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
+      expect(fetchResultado).toHaveBeenCalledTimes(2);
+    });
+  });
 });

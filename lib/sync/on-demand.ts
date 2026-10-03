@@ -3,6 +3,15 @@ import type { SnapshotRow } from "../queries/snapshots";
 
 export const VIGENCIA_SNAPSHOT_MS = 15 * 60 * 1000;
 
+/**
+ * Pedidos al TSJE en curso, por combinación. Vive en memoria, así que solo
+ * deduplica dentro de una misma instancia del servidor: en Vercel cada
+ * instancia tiene el suyo. Alcanza para absorber la mayoría de las visitas
+ * simultáneas; eliminarlas del todo entre instancias requeriría un lock en
+ * Postgres.
+ */
+const sincronizacionesEnCurso = new Map<string, Promise<SnapshotRow | null>>();
+
 export interface DepsSincronizacionOnDemand {
   obtenerSnapshotExistente: (
     eleccionId: number,
@@ -30,6 +39,10 @@ export interface DepsSincronizacionOnDemand {
  * congelados en la primera visita. Si el TSJE falla, devuelve el último
  * snapshot guardado aunque esté vencido (mejor datos viejos que ninguno), o
  * null si nunca hubo uno, y la página cae al mensaje de "sin datos".
+ *
+ * Visitas simultáneas a la misma combinación con el snapshot vencido
+ * comparten un único pedido al TSJE (ver sincronizacionesEnCurso), en vez de
+ * disparar cada una su propio fetch e INSERT.
  *
  * Sin implementación real por defecto (a propósito, mismo patrón que
  * ejecutarSync en service.ts): las deps reales viven en on-demand-deps.ts,
@@ -59,6 +72,32 @@ export async function obtenerOSincronizarSnapshot(
     return existente;
   }
 
+  const clave = `${eleccionId}:${departamentoId}:${municipioId}:${candidatura}`;
+  let enCurso = sincronizacionesEnCurso.get(clave);
+  if (!enCurso) {
+    enCurso = sincronizarDesdeTsje(
+      eleccionId,
+      codeleccion,
+      departamentoId,
+      municipioId,
+      candidatura,
+      existente,
+      deps,
+    ).finally(() => sincronizacionesEnCurso.delete(clave));
+    sincronizacionesEnCurso.set(clave, enCurso);
+  }
+  return enCurso;
+}
+
+async function sincronizarDesdeTsje(
+  eleccionId: number,
+  codeleccion: number,
+  departamentoId: number,
+  municipioId: number,
+  candidatura: TipoCandidatura,
+  existente: SnapshotRow | null,
+  deps: DepsSincronizacionOnDemand,
+): Promise<SnapshotRow | null> {
   try {
     const payload = await deps.fetchResultado({
       codeleccion,
