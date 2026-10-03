@@ -6,6 +6,8 @@ import { FiltrosPendingProvider } from "./components/FiltrosPendingContext";
 import { EleccionSelector } from "./components/EleccionSelector";
 import { FiltrosPendingIndicator } from "./components/FiltrosPendingIndicator";
 
+export const dynamic = "force-dynamic";
+
 export default async function InicioPage({
   searchParams,
 }: {
@@ -38,7 +40,7 @@ export default async function InicioPage({
   );
 
   const eleccionQuery = eleccionSeleccionada
-    ? `&eleccion=${eleccionSeleccionada.codeleccion}`
+    ? `eleccion=${eleccionSeleccionada.codeleccion}`
     : "";
 
   const query = `?departamento=${departamentoId}&distrito=${municipioId}&${eleccionQuery}`;
@@ -69,8 +71,8 @@ export default async function InicioPage({
       </FiltrosPendingProvider>
 
       <nav>
-        <a href="/">Ver resultados de Intendente</a>
-        <a href="/">Ver resultados de Concejales</a>
+        <a href={`/intendente${query}`}>Ver resultados de Intendente</a>
+        <a href="">Ver resultados de Concejales</a>
       </nav>
     </main>
   );

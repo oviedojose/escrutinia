@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { StatusBadge } from "./StatusBadge";
 
 interface NavBarProps {
   active: "intendente" | "concejales";
@@ -44,7 +45,7 @@ export function NavBar({
   return (
     <nav className="esc-navbar">
       <Link href="/">← Inicio</Link>
-      <span className="esc-navbar__brand">Escrutinio</span>
+      <span className="esc-navbar__brand">Escrutinia</span>
       {links.map((link) => (
         <Link
           key={link.key}
@@ -54,7 +55,9 @@ export function NavBar({
           {link.label}
         </Link>
       ))}
-      {statusTimestamp}
+      {statusTimestamp && (
+        <StatusBadge status="provisional" timestamp={statusTimestamp} />
+      )}
     </nav>
   );
 }

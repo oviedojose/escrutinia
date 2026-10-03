@@ -1,31 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { MunicipioSelector } from "./MunicipioSelector";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFiltrosPending } from "./FiltrosPendingContext";
+import { MunicipioSelector } from "./MunicipioSelector";
 
-interface InicioSelectorFormProps {
+interface ResultadosSelectorProps {
   departamentos: { id: number; nombre: string }[];
   municipios: { id: number; departamentoId: number; nombre: string }[];
   departamentoId: number;
   municipioId: number;
 }
 
-export function InicioSelectorForm({
+export function ResultadosSelector({
   departamentos,
   municipios,
   departamentoId,
   municipioId,
-}: InicioSelectorFormProps) {
+}: ResultadosSelectorProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { runTransition } = useFiltrosPending();
 
-  // See ResultadosSelector for why this is local state, reset from props
-  // during render rather than in an effect: it lets the distrito <select>
-  // re-filter instantly from the already-loaded `distritos` list instead of
-  // showing the previous departamento's distritos until navigation finishes.
+  // Local, immediately-updated selection so the distrito <select> re-filters
+  // its options (from the already-loaded `distritos` list) as soon as the
+  // user picks a departamento, instead of showing the previous departamento's
+  // distritos until the navigation triggered below finishes. Resetting it
+  // from new props happens during render (not an effect) so it also picks
+  // up external navigation, e.g. browser back/forward or a NavBar link.
   const [localDepartamentoId, setLocalDepartamentoId] =
     useState(departamentoId);
   const [localMunicipioId, setLocalMunicipioId] = useState(municipioId);
@@ -55,7 +58,7 @@ export function InicioSelectorForm({
         const params = new URLSearchParams(searchParams.toString());
         params.set("departamento", String(d));
         params.set("municipio", String(muni));
-        runTransition(() => router.push(`/?${params.toString()}`));
+        runTransition(() => router.push(`${pathname}?${params.toString()}`));
       }}
     />
   );
