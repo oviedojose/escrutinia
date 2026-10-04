@@ -1,3 +1,4 @@
+import { eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { resultadosSnapshot } from "../db/schema";
 import { obtenerUltimoSnapshot } from "../queries/snapshots";
@@ -16,5 +17,12 @@ export const depsSincronizacionOnDemandReales: DepsSincronizacionOnDemand = {
       payload: input.payload,
       horaTsje: input.payload.horaFormated,
     });
+  },
+  renovarSnapshot: async (snapshotId) => {
+    // now() de Postgres, igual que el default de sincronizado_en al insertar.
+    await db
+      .update(resultadosSnapshot)
+      .set({ sincronizadoEn: sql`now()` })
+      .where(eq(resultadosSnapshot.id, snapshotId));
   },
 };

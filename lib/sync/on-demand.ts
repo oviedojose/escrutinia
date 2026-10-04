@@ -1,7 +1,8 @@
 import type { TipoCandidatura, TsjeParams, TsjeRespuesta } from "../tsje/types";
 import type { SnapshotRow } from "../queries/snapshots";
+import { mismosResultados } from "./mismos-resultados";
 
-export const VIGENCIA_SNAPSHOT_MS = 15 * 60 * 1000;
+export const VIGENCIA_SNAPSHOT_MS = 5 * 60 * 1000;
 
 /**
  * Pedidos al TSJE en curso, por combinación. Vive en memoria, así que solo
@@ -27,18 +28,24 @@ export interface DepsSincronizacionOnDemand {
     candidatura: 1 | 2;
     payload: TsjeRespuesta;
   }) => Promise<void>;
+  /** Marca el snapshot como recién sincronizado, sin tocar su payload. */
+  renovarSnapshot: (snapshotId: number) => Promise<void>;
   ahora?: () => Date;
 }
 
 /**
  * Si el último snapshot guardado para esta combinación se sincronizó hace
- * menos de VIGENCIA_SNAPSHOT_MS (15 minutos), lo devuelve tal cual. Si no
+ * menos de VIGENCIA_SNAPSHOT_MS (5 minutos), lo devuelve tal cual. Si no
  * existe o ya venció, lo trae del TSJE en el momento (on-demand) y lo guarda
  * antes de devolverlo -- así una página que nunca fue sincronizada igual
  * muestra resultados reales, y durante el escrutinio los datos no quedan
  * congelados en la primera visita. Si el TSJE falla, devuelve el último
  * snapshot guardado aunque esté vencido (mejor datos viejos que ninguno), o
  * null si nunca hubo uno, y la página cae al mensaje de "sin datos".
+ *
+ * Si el TSJE devuelve los mismos resultados que el último snapshot, no se
+ * inserta una fila nueva: solo se renueva su fecha de sincronización, para
+ * que siga valiendo como caché sin hacer crecer la tabla.
  *
  * Visitas simultáneas a la misma combinación con el snapshot vencido
  * comparten un único pedido al TSJE (ver sincronizacionesEnCurso), en vez de
@@ -105,13 +112,17 @@ async function sincronizarDesdeTsje(
       departamento: departamentoId,
       municipio: municipioId,
     });
-    await deps.guardarSnapshot({
-      eleccionId,
-      departamentoId,
-      municipioId,
-      candidatura,
-      payload,
-    });
+    if (existente && mismosResultados(existente.payload, payload)) {
+      await deps.renovarSnapshot(existente.id);
+    } else {
+      await deps.guardarSnapshot({
+        eleccionId,
+        departamentoId,
+        municipioId,
+        candidatura,
+        payload,
+      });
+    }
   } catch {
     return existente;
   }

@@ -19,6 +19,13 @@ const respuestaFalsa: TsjeRespuesta = {
   horaFormated: "25-09-2026 10:00:00",
 };
 
+/** Mismos campos que respuestaFalsa pero con otros resultados. */
+const respuestaNueva: TsjeRespuesta = {
+  ...respuestaFalsa,
+  totales: { ...respuestaFalsa.totales, mesasPublicadas: 8, totalVotos: 800 },
+  horaFormated: "25-09-2026 10:05:00",
+};
+
 const AHORA = new Date("2026-10-03T12:00:00Z");
 const ahora = () => AHORA;
 
@@ -31,8 +38,8 @@ function snapshotSincronizadoHace(minutos: number, id = 1): SnapshotRow {
 }
 
 describe("obtenerOSincronizarSnapshot", () => {
-  it("si el último snapshot tiene menos de 15 minutos, lo devuelve sin llamar al TSJE", async () => {
-    const snapshotReciente = snapshotSincronizadoHace(14);
+  it("si el último snapshot tiene menos de 5 minutos, lo devuelve sin llamar al TSJE", async () => {
+    const snapshotReciente = snapshotSincronizadoHace(4);
     const obtenerSnapshotExistente = vi.fn().mockResolvedValue(snapshotReciente);
     const fetchResultado = vi.fn();
     const guardarSnapshot = vi.fn();
@@ -41,6 +48,7 @@ describe("obtenerOSincronizarSnapshot", () => {
       obtenerSnapshotExistente,
       fetchResultado,
       guardarSnapshot,
+      renovarSnapshot: vi.fn(),
       ahora,
     });
 
@@ -49,20 +57,21 @@ describe("obtenerOSincronizarSnapshot", () => {
     expect(guardarSnapshot).not.toHaveBeenCalled();
   });
 
-  it("si el último snapshot tiene 15 minutos o más, lo actualiza desde el TSJE", async () => {
-    const snapshotViejo = snapshotSincronizadoHace(15);
+  it("si el último snapshot tiene 5 minutos o más, lo actualiza desde el TSJE", async () => {
+    const snapshotViejo = snapshotSincronizadoHace(5);
     const snapshotNuevo = snapshotSincronizadoHace(0, 2);
     const obtenerSnapshotExistente = vi
       .fn()
       .mockResolvedValueOnce(snapshotViejo)
       .mockResolvedValueOnce(snapshotNuevo);
-    const fetchResultado = vi.fn().mockResolvedValue(respuestaFalsa);
+    const fetchResultado = vi.fn().mockResolvedValue(respuestaNueva);
     const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
 
     const resultado = await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, {
       obtenerSnapshotExistente,
       fetchResultado,
       guardarSnapshot,
+      renovarSnapshot: vi.fn(),
       ahora,
     });
 
@@ -84,6 +93,7 @@ describe("obtenerOSincronizarSnapshot", () => {
       obtenerSnapshotExistente,
       fetchResultado,
       guardarSnapshot,
+      renovarSnapshot: vi.fn(),
       ahora,
     });
 
@@ -114,6 +124,7 @@ describe("obtenerOSincronizarSnapshot", () => {
       obtenerSnapshotExistente,
       fetchResultado,
       guardarSnapshot,
+      renovarSnapshot: vi.fn(),
       ahora,
     });
 
@@ -130,11 +141,77 @@ describe("obtenerOSincronizarSnapshot", () => {
       obtenerSnapshotExistente,
       fetchResultado,
       guardarSnapshot,
+      renovarSnapshot: vi.fn(),
       ahora,
     });
 
     expect(resultado).toBeNull();
     expect(guardarSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("si el TSJE devuelve los mismos resultados, renueva el snapshot existente en vez de insertar", async () => {
+    const snapshotViejo = snapshotSincronizadoHace(10, 7);
+    const snapshotRenovado = snapshotSincronizadoHace(0, 7);
+    const obtenerSnapshotExistente = vi
+      .fn()
+      .mockResolvedValueOnce(snapshotViejo)
+      .mockResolvedValueOnce(snapshotRenovado);
+    // Mismos resultados, otra hora: no cuenta como cambio.
+    const fetchResultado = vi
+      .fn()
+      .mockResolvedValue({ ...structuredClone(respuestaFalsa), horaFormated: "25-09-2026 10:30:00" });
+    const guardarSnapshot = vi.fn();
+    const renovarSnapshot = vi.fn().mockResolvedValue(undefined);
+
+    const resultado = await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, {
+      obtenerSnapshotExistente,
+      fetchResultado,
+      guardarSnapshot,
+      renovarSnapshot,
+      ahora,
+    });
+
+    expect(renovarSnapshot).toHaveBeenCalledWith(7);
+    expect(guardarSnapshot).not.toHaveBeenCalled();
+    expect(resultado).toBe(snapshotRenovado);
+  });
+
+  it("si los resultados cambiaron, inserta un snapshot nuevo y no renueva el viejo", async () => {
+    const snapshotViejo = snapshotSincronizadoHace(10, 7);
+    const obtenerSnapshotExistente = vi.fn().mockResolvedValue(snapshotViejo);
+    const fetchResultado = vi.fn().mockResolvedValue(respuestaNueva);
+    const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
+    const renovarSnapshot = vi.fn();
+
+    await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, {
+      obtenerSnapshotExistente,
+      fetchResultado,
+      guardarSnapshot,
+      renovarSnapshot,
+      ahora,
+    });
+
+    expect(guardarSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: respuestaNueva }),
+    );
+    expect(renovarSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("si falla la renovación, devuelve el snapshot viejo", async () => {
+    const snapshotViejo = snapshotSincronizadoHace(10, 7);
+    const obtenerSnapshotExistente = vi.fn().mockResolvedValue(snapshotViejo);
+    const fetchResultado = vi.fn().mockResolvedValue(respuestaFalsa);
+    const renovarSnapshot = vi.fn().mockRejectedValue(new Error("db caída"));
+
+    const resultado = await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, {
+      obtenerSnapshotExistente,
+      fetchResultado,
+      guardarSnapshot: vi.fn(),
+      renovarSnapshot,
+      ahora,
+    });
+
+    expect(resultado).toBe(snapshotViejo);
   });
 
   describe("visitas simultáneas", () => {
@@ -159,11 +236,11 @@ describe("obtenerOSincronizarSnapshot", () => {
       const tsje = pedidoPendiente<TsjeRespuesta>();
       const fetchResultado = vi.fn().mockReturnValue(tsje.promesa);
       const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
-      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, ahora };
+      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, renovarSnapshot: vi.fn(), ahora };
 
       const visitaA = obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
       const visitaB = obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
-      tsje.resolver(respuestaFalsa);
+      tsje.resolver(respuestaNueva);
 
       expect(await visitaA).toBe(snapshotNuevo);
       expect(await visitaB).toBe(snapshotNuevo);
@@ -175,7 +252,7 @@ describe("obtenerOSincronizarSnapshot", () => {
       const obtenerSnapshotExistente = vi.fn().mockResolvedValue(null);
       const fetchResultado = vi.fn().mockResolvedValue(respuestaFalsa);
       const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
-      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, ahora };
+      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, renovarSnapshot: vi.fn(), ahora };
 
       await Promise.all([
         obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps),
@@ -190,7 +267,7 @@ describe("obtenerOSincronizarSnapshot", () => {
       const obtenerSnapshotExistente = vi.fn().mockResolvedValue(snapshotViejo);
       const fetchResultado = vi.fn().mockResolvedValue(respuestaFalsa);
       const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
-      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, ahora };
+      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, renovarSnapshot: vi.fn(), ahora };
 
       await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
       await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
@@ -207,7 +284,7 @@ describe("obtenerOSincronizarSnapshot", () => {
         .mockReturnValueOnce(tsje.promesa)
         .mockResolvedValue(respuestaFalsa);
       const guardarSnapshot = vi.fn().mockResolvedValue(undefined);
-      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, ahora };
+      const deps = { obtenerSnapshotExistente, fetchResultado, guardarSnapshot, renovarSnapshot: vi.fn(), ahora };
 
       const visitaA = obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);
       const visitaB = obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, deps);

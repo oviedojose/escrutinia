@@ -34,7 +34,7 @@ El sitio oficial del TSJE muestra votos por lista, pero no calcula el reparto de
   - **Tabla D'Hondt completa** con todos los cocientes (votos ÷ 1, ÷ 2, …), marcando el orden en que se asigna cada banca.
   - **Concejales electos** por lista, ordenados por voto preferencial.
 - **Indicador de estado.** Cada vista muestra si los datos son provisorios y la hora del corte del TSJE.
-- **Datos actualizados sin intervención.** Si el último dato guardado tiene más de 15 minutos, se vuelve a pedir al TSJE al abrir la página.
+- **Datos actualizados sin intervención.** Si el último dato guardado tiene más de 5 minutos, se vuelve a pedir al TSJE al abrir la página.
 
 ---
 
@@ -63,7 +63,7 @@ El sitio oficial del TSJE muestra votos por lista, pero no calcula el reparto de
                                  │
                    obtenerOSincronizarSnapshot()
                                  │
-              ¿snapshot de menos de 15 min en la base?
+              ¿snapshot de menos de 5 min en la base?
                  │ sí                              │ no
                  ▼                                 ▼
         ┌─────────────────┐            ┌──────────────────────┐
@@ -77,7 +77,7 @@ El sitio oficial del TSJE muestra votos por lista, pero no calcula el reparto de
 
 ### Decisiones de diseño
 
-- **Snapshots con caché de 15 minutos.** Cada combinación de elección, distrito y tipo de candidatura se guarda como snapshot en Postgres. Si el TSJE falla o está lento, se muestra el último dato disponible: es preferible un dato algo viejo a una pantalla vacía.
+- **Snapshots con caché de 5 minutos.** Cada combinación de elección, distrito y tipo de candidatura se guarda como snapshot en Postgres. Si el TSJE devuelve los mismos resultados que el último snapshot, no se inserta una fila nueva: solo se renueva su fecha. Si el TSJE falla o está lento, se muestra el último dato disponible: es preferible un dato algo viejo a una pantalla vacía.
 - **Sincronización a demanda y en lote.** `lib/sync/on-demand.ts` actualiza el distrito que se está viendo. `lib/sync/service.ts` permite sincronizar muchos distritos en paralelo con concurrencia limitada.
 - **Inyección de dependencias en la lógica de sync.** Las funciones reciben sus dependencias (fetch, base de datos, reloj), así que los tests corren sin `DATABASE_URL` ni red.
 - **Firewall Sucuri.** El sitio del TSJE está detrás de Sucuri, que plantea un desafío _proof-of-work_ (SHA-256). `lib/tsje/sucuri.ts` lo resuelve, obtiene la cookie de sesión y la renueva cuando el TSJE responde 403.
