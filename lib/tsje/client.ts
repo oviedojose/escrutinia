@@ -19,7 +19,7 @@ export async function fetchResultadoTsje(
   obtenerCookie: (signal: AbortSignal) => Promise<string> = obtenerCookieSucuri,
   timeoutMs: number = TIMEOUT_TSJE_MS,
 ): Promise<TsjeRespuesta> {
-  const url = `${BASE_URL}?codeleccion=${params.codeleccion}&candidatura=${params.candidatura}&departamento=${params.departamento}&municipio=${params.municipio}`;
+  const url = `${BASE_URL}?codeleccion=${params.codeleccion}&candidatura=${params.candidatura}&departamento=${params.departamento}&distrito=${params.municipio}`;
   const signal = AbortSignal.timeout(timeoutMs);
 
   const cookie = await obtenerCookie(signal);
