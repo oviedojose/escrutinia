@@ -60,6 +60,7 @@ export default async function ConcejalesPage({
         active="concejales"
         contexto={contextoConEleccion}
         statusTimestamp={vista.horaFormated}
+        statusFinal={snapshot.final}
       />
       <h1>Resultados de Concejales</h1>
       <p>

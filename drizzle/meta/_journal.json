@@ -15,6 +15,13 @@
       "when": 1790964804681,
       "tag": "0001_agregar_activa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791558325683,
+      "tag": "0002_agregar_final",
+      "breakpoints": true
     }
   ]
 }

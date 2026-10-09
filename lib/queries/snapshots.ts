@@ -12,6 +12,7 @@ export interface SnapshotRow {
   payload: TsjeRespuesta;
   horaTsje: string;
   sincronizadoEn: Date;
+  final: boolean;
 }
 
 export async function obtenerUltimoSnapshot(

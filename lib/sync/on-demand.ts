@@ -34,6 +34,9 @@ export interface DepsSincronizacionOnDemand {
 }
 
 /**
+ * Si el último snapshot es final (ver resultadosSnapshot.final), lo devuelve
+ * siempre sin consultar al TSJE.
+ *
  * Si el último snapshot guardado para esta combinación se sincronizó hace
  * menos de VIGENCIA_SNAPSHOT_MS (5 minutos), lo devuelve tal cual. Si no
  * existe o ya venció, lo trae del TSJE en el momento (on-demand) y lo guarda
@@ -73,8 +76,9 @@ export async function obtenerOSincronizarSnapshot(
   );
   if (
     existente &&
-    ahora.getTime() - new Date(existente.sincronizadoEn).getTime() <
-      VIGENCIA_SNAPSHOT_MS
+    (existente.final ||
+      ahora.getTime() - new Date(existente.sincronizadoEn).getTime() <
+        VIGENCIA_SNAPSHOT_MS)
   ) {
     return existente;
   }

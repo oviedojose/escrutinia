@@ -4,6 +4,8 @@ import { StatusBadge } from "./StatusBadge";
 interface NavBarProps {
   active: "intendente" | "concejales";
   statusTimestamp?: string;
+  /** Resultado final (no oficial): se muestra como Provisorio en vez de En vivo. */
+  statusFinal?: boolean;
   departamentoId?: number;
   municipioId?: number;
   codeleccion?: number;
@@ -17,6 +19,7 @@ function buildQuery(...parts: (string | undefined)[]): string {
 export function NavBar({
   active,
   statusTimestamp,
+  statusFinal = false,
   departamentoId,
   municipioId,
   codeleccion,
@@ -56,7 +59,10 @@ export function NavBar({
         </Link>
       ))}
       {statusTimestamp && (
-        <StatusBadge status="provisional" timestamp={statusTimestamp} />
+        <StatusBadge
+          status={statusFinal ? "provisional" : "live"}
+          timestamp={statusTimestamp}
+        />
       )}
     </nav>
   );

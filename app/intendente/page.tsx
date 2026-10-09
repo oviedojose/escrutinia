@@ -55,6 +55,7 @@ export default async function IntendentePage({
         active="intendente"
         contexto={contextoConEleccion}
         statusTimestamp={vista.horaFormated}
+        statusFinal={snapshot.final}
       />
       <h1>Resultados de Intendente</h1>
       <p>

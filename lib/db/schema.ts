@@ -49,6 +49,11 @@ export const resultadosSnapshot = pgTable(
     candidatura: integer("candidatura").notNull(),
     payload: jsonb("payload").notNull(),
     horaTsje: text("hora_tsje").notNull(),
+    /**
+     * Resultado final (no oficial): el TSJE ya no lo va a cambiar en la
+     * divulgación preliminar, así que on-demand deja de consultarlo.
+     */
+    final: boolean("final").notNull().default(false),
     sincronizadoEn: timestamp("sincronizado_en", {
       withTimezone: true,
     })
