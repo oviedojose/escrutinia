@@ -1,177 +1,182 @@
 # Escrutinia
 
-**Resultados de las elecciones municipales de Paraguay, distrito por distrito, con el reparto de bancas de concejales calculado en tiempo real.**
+_English · [Español](README.es.md)_
 
-Escrutinia toma los datos del TREP (Transmisión de Resultados Electorales Preliminares) que publica el Tribunal Superior de Justicia Electoral (TSJE) y los presenta de una forma clara: quién va ganando la intendencia y **cómo quedarían repartidas las bancas de la Junta Municipal** según el método D'Hondt, incluyendo qué candidatos resultarían electos por voto preferencial.
+**Results of Paraguay's municipal elections, district by district, with the allocation of council seats calculated in real time.**
 
-El sitio oficial del TSJE muestra votos por lista, pero no calcula el reparto de bancas ni quiénes entrarían. Escrutinia hace ese cálculo y muestra el paso a paso.
+Escrutinia takes the TREP data (Transmisión de Resultados Electorales Preliminares, the preliminary results transmission) published by the Superior Tribunal of Electoral Justice (TSJE) and presents it clearly: who is winning the mayor's office and **how the seats of the Municipal Council would be allocated** under the D'Hondt method, including which candidates would be elected by preferential vote.
 
----
-
-## Capturas
-
-### Inicio: elegir la elección, el departamento y el distrito
-
-![Pantalla de inicio](docs/screenshots/inicio.png)
-
-### Intendente: votos por candidato y totales del escrutinio
-
-![Resultados de Intendente](docs/screenshots/intendente.png)
-
-### Concejales: distribución de bancas, tabla D'Hondt y concejales electos
-
-![Resultados de Concejales](docs/screenshots/concejales.png)
+The official TSJE site shows votes per list, but it does not calculate the seat allocation or who would get in. Escrutinia does that calculation and shows it step by step.
 
 ---
 
-## Funcionalidades
+## Screenshots
 
-- **Selector de elección, departamento y distrito.** La selección se guarda en la URL, así que cualquier vista se puede compartir o guardar como marcador.
-- **Resultados de Intendente.** Votos escrutados, porcentaje de mesas procesadas, votos en blanco y nulos, y ranking de candidatos con barras proporcionales y el color de cada lista.
-- **Resultados de Concejales:**
-  - Cantidad de bancas a repartir, deducida de la cantidad de candidatos que presenta cada lista (24 en Asunción, 12 en la mayoría de los distritos, 9 en Yguazú, etc.).
-  - Barra de distribución de bancas por lista.
-  - **Tabla D'Hondt completa** con todos los cocientes (votos ÷ 1, ÷ 2, …), marcando el orden en que se asigna cada banca.
-  - **Concejales electos** por lista, ordenados por voto preferencial.
-- **Indicador de estado.** Cada vista muestra si los datos son provisorios y la hora del corte del TSJE.
-- **Datos actualizados sin intervención.** Si el último dato guardado tiene más de 5 minutos, se vuelve a pedir al TSJE al abrir la página.
+The app is built for a Paraguayan audience, so the interface is in Spanish.
 
----
+### Home: choose the election, department and district
 
-## Stack tecnológico
+![Home screen](docs/screenshots/inicio.png)
 
-| Capa          | Tecnología                                          | Por qué                                                                                                                                                                                          |
-| ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Framework     | **Next.js 16** (App Router, Turbopack)              | Los Server Components consultan la base y el TSJE directamente en el servidor, sin una API intermedia. Las páginas son `force-dynamic` porque los resultados cambian durante todo el escrutinio. |
-| UI            | **React 19**                                        | Las transiciones (`useTransition`) mantienen los selectores fluidos mientras el servidor carga el distrito nuevo, y muestran un indicador de carga.                                              |
-| Lenguaje      | **TypeScript**                                      | La respuesta del TSJE tiene una forma compleja (totales, candidatos, preferenciales). Tiparla (`lib/tsje/types.ts`) evita errores silenciosos en los cálculos.                                   |
-| Base de datos | **PostgreSQL en Neon** (`@neondatabase/serverless`) | Postgres serverless con un plan gratuito generoso y conexión por HTTP, que encaja con el despliegue serverless de Next.js. Las respuestas del TSJE se guardan como `jsonb` sin modificar.        |
-| ORM           | **Drizzle ORM + drizzle-kit**                       | Liviano, con tipos derivados del esquema y migraciones SQL versionadas en `drizzle/`. Sin runtime pesado ni generación de clientes.                                                              |
-| Tests         | **Vitest + Testing Library + jsdom**                | Rápido, compatible con ESM y TypeScript sin configuración extra. Cubre la lógica crítica: D'Hondt, electos, sincronización y cliente del TSJE.                                                   |
-| Calidad       | **ESLint** (`eslint-config-next`)                   | Reglas estándar de Next.js y React.                                                                                                                                                              |
-| Scripts       | **tsx**                                             | Ejecuta el seed de la base directamente en TypeScript.                                                                                                                                           |
+### Mayor (Intendente): votes per candidate and vote-count totals
+
+![Mayor results](docs/screenshots/intendente.png)
+
+### Councilors (Concejales): seat distribution, D'Hondt table and elected councilors
+
+![Councilor results](docs/screenshots/concejales.png)
 
 ---
 
-## Arquitectura
+## Features
+
+- **Election, department and district selector.** The selection is stored in the URL, so any view can be shared or bookmarked.
+- **Mayor results.** Votes counted, percentage of polling stations processed, blank and null votes, and a ranking of candidates with proportional bars and each list's color.
+- **Councilor results:**
+  - Number of seats up for allocation, inferred from the number of candidates each list fields (24 in Asunción, 12 in most districts, 9 in Yguazú, etc.).
+  - Seat distribution bar per list.
+  - **Full D'Hondt table** with every quotient (votes ÷ 1, ÷ 2, …), marking the order in which each seat is assigned.
+  - **Elected councilors** per list, ranked by preferential vote.
+- **Status indicator.** Each view shows the time of the TSJE's cut-off and whether the results are still being counted ("En vivo", live) or are final but unofficial ("Provisorio", provisional).
+- **Data kept up to date without intervention.** If the last stored data is more than 5 minutes old, it is requested again from the TSJE when the page is opened. Results marked as final are no longer requested.
+
+---
+
+## Tech stack
+
+| Layer     | Technology                                          | Why                                                                                                                                                                             |
+| --------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework | **Next.js 16** (App Router, Turbopack)              | Server Components query the database and the TSJE directly on the server, with no intermediate API. Pages are `force-dynamic` because results change throughout the vote count. |
+| UI        | **React 19**                                        | Transitions (`useTransition`) keep the selectors responsive while the server loads the new district, and show a loading indicator.                                              |
+| Language  | **TypeScript**                                      | The TSJE response has a complex shape (totals, candidates, preferential votes). Typing it (`lib/tsje/types.ts`) prevents silent errors in the calculations.                     |
+| Database  | **PostgreSQL on Neon** (`@neondatabase/serverless`) | Serverless Postgres with a generous free tier and an HTTP connection, which fits Next.js's serverless deployment. TSJE responses are stored unmodified as `jsonb`.              |
+| ORM       | **Drizzle ORM + drizzle-kit**                       | Lightweight, with types derived from the schema and versioned SQL migrations in `drizzle/`. No heavy runtime or client generation.                                              |
+| Tests     | **Vitest + Testing Library + jsdom**                | Fast, works with ESM and TypeScript without extra configuration. Covers the critical logic: D'Hondt, elected candidates, synchronization and the TSJE client.                   |
+| Quality   | **ESLint** (`eslint-config-next`)                   | Standard Next.js and React rules.                                                                                                                                               |
+| Scripts   | **tsx**                                             | Runs the database seed directly in TypeScript.                                                                                                                                  |
+
+---
+
+## Architecture
 
 ```
                  ┌──────────────────────────────────────┐
-  Navegador ───▶ │  Next.js (Server Components)         │
+  Browser ─────▶ │  Next.js (Server Components)         │
                  │  app/page.tsx · intendente · concej. │
                  └───────────────┬──────────────────────┘
                                  │
                    obtenerOSincronizarSnapshot()
                                  │
-              ¿snapshot de menos de 5 min en la base?
-                 │ sí                              │ no
+      final snapshot, or under 5 min old, in the database?
+                 │ yes                             │ no
                  ▼                                 ▼
         ┌─────────────────┐            ┌──────────────────────┐
-        │ Postgres (Neon) │◀── guarda ─│ Cliente TSJE         │
-        │ resultados_     │            │ (+ firewall Sucuri)  │
+        │ Postgres (Neon) │◀── saves ──│ TSJE client          │
+        │ resultados_     │            │ (+ Sucuri firewall)  │
         │ snapshot (jsonb)│            └──────────────────────┘
         └────────┬────────┘
                  ▼
-     lib/queries → lib/dhondt → vista lista para renderizar
+     lib/queries → lib/dhondt → view ready to render
 ```
 
-### Decisiones de diseño
+### Design decisions
 
-- **Snapshots con caché de 5 minutos.** Cada combinación de elección, distrito y tipo de candidatura se guarda como snapshot en Postgres. Si el TSJE devuelve los mismos resultados que el último snapshot, no se inserta una fila nueva: solo se renueva su fecha. Si el TSJE falla o está lento, se muestra el último dato disponible: es preferible un dato algo viejo a una pantalla vacía.
-- **Sincronización a demanda y en lote.** `lib/sync/on-demand.ts` actualiza el distrito que se está viendo. `lib/sync/service.ts` permite sincronizar muchos distritos en paralelo con concurrencia limitada.
-- **Inyección de dependencias en la lógica de sync.** Las funciones reciben sus dependencias (fetch, base de datos, reloj), así que los tests corren sin `DATABASE_URL` ni red.
-- **Firewall Sucuri.** El sitio del TSJE está detrás de Sucuri, que plantea un desafío _proof-of-work_ (SHA-256). `lib/tsje/sucuri.ts` lo resuelve, obtiene la cookie de sesión y la renueva cuando el TSJE responde 403.
-- **Cálculo puro y testeado.** `lib/dhondt/` contiene funciones puras: `calcularDHondt` reparte las bancas, `calcularElectos` ordena por voto preferencial y `bancasDesdeRespuesta` deduce cuántas bancas hay en el distrito.
-- **Clave geográfica compuesta.** El id de un distrito solo es único dentro de su departamento, por eso `municipios` usa la clave primaria compuesta `(departamento_id, id)`.
+- **Snapshots with a 5-minute cache.** Each combination of election, district and candidacy type is stored as a snapshot in Postgres. If the TSJE returns the same results as the last snapshot, no new row is inserted: only its timestamp is renewed. If the TSJE fails or is slow, the latest available data is shown: slightly old data is better than an empty screen. Once a snapshot is marked as final (final but unofficial results), it is no longer requested from the TSJE.
+- **On-demand and batch synchronization.** `lib/sync/on-demand.ts` updates the district being viewed. `lib/sync/lote.ts` (run with `npm run sync:general`) syncs every district of the active election one request at a time, pausing between requests so as not to overload the TSJE, starting with Capital, Central and Alto Paraná. It then marks the synced results as final.
+- **Dependency injection in the sync logic.** Functions receive their dependencies (fetch, database, clock), so tests run without `DATABASE_URL` or network access.
+- **Sucuri firewall.** The TSJE site sits behind Sucuri, which poses a _proof-of-work_ challenge (SHA-256). `lib/tsje/sucuri.ts` solves it, obtains the session cookie and renews it when the TSJE responds with 403.
+- **Pure, tested calculations.** `lib/dhondt/` contains pure functions: `calcularDHondt` allocates the seats, `calcularElectos` ranks by preferential vote and `bancasDesdeRespuesta` infers how many seats the district has.
+- **Composite geographic key.** A district's id is only unique within its department, so `municipios` uses the composite primary key `(departamento_id, id)`.
 
 ---
 
-## Estructura del proyecto
+## Project structure
 
 ```
 app/
-  page.tsx               # Inicio: selector de elección / departamento / distrito
-  intendente/page.tsx    # Resultados de Intendente
-  concejales/page.tsx    # Resultados de Concejales + D'Hondt
-  components/            # NavBar, selectores, DHondtTable, SeatDistributionBar, ...
+  page.tsx               # Home: election / department / district selector
+  intendente/page.tsx    # Mayor results
+  concejales/page.tsx    # Councilor results + D'Hondt
+  components/            # NavBar, selectors, DHondtTable, SeatDistributionBar, ...
 lib/
-  tsje/                  # Cliente HTTP del TSJE, solver de Sucuri y tipos de la respuesta
-  db/                    # Esquema Drizzle, cliente Neon y seed de geografía/elecciones
-  sync/                  # Sincronización on-demand y en lote de snapshots
-  queries/               # Transforman un snapshot en la vista de cada página
-  dhondt/                # Método D'Hondt, cálculo de bancas y electos
-drizzle/                 # Migraciones SQL generadas por drizzle-kit
-docs/                    # Diseño (pantallas, design system), JSON de referencia y capturas
+  tsje/                  # TSJE HTTP client, Sucuri solver and response types
+  db/                    # Drizzle schema, Neon client and geography/elections seed
+  sync/                  # On-demand and batch snapshot synchronization
+  queries/               # Turn a snapshot into each page's view
+  dhondt/                # D'Hondt method, seat count and elected candidates
+drizzle/                 # SQL migrations generated by drizzle-kit
+docs/                    # Design (screens, design system), reference JSON and screenshots
 ```
 
 ---
 
-## Puesta en marcha
+## Getting started
 
-### Requisitos
+### Requirements
 
-- Node.js 20 o superior
-- Una base PostgreSQL (recomendado: un proyecto gratuito en [Neon](https://neon.tech))
+- Node.js 20 or later
+- A PostgreSQL database (recommended: a free project on [Neon](https://neon.tech))
 
-### 1. Instalar dependencias
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Configurar variables de entorno
+### 2. Configure environment variables
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Completar `DATABASE_URL` con la cadena de conexión de Postgres:
+Fill in `DATABASE_URL` with the Postgres connection string:
 
 ```env
 DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
 ```
 
-### 3. Crear las tablas y cargar los datos base
+### 3. Create the tables and load the base data
 
 ```bash
-npx drizzle-kit migrate   # aplica las migraciones de drizzle/
-npm run db:seed           # carga departamentos, distritos y elecciones
+npx drizzle-kit migrate   # applies the migrations in drizzle/
+npm run db:seed           # loads departments, districts and elections
 ```
 
-### 4. Levantar la app
+### 4. Start the app
 
 ```bash
 npm run dev
 ```
 
-Abrir [http://localhost:3000](http://localhost:3000). La primera vez que se abre un distrito, la app pide los resultados al TSJE y los guarda.
+Open [http://localhost:3000](http://localhost:3000). The first time a district is opened, the app requests the results from the TSJE and stores them.
 
 ---
 
 ## Scripts
 
-| Comando           | Descripción                             |
-| ----------------- | --------------------------------------- |
-| `npm run dev`     | Servidor de desarrollo (Turbopack)      |
-| `npm run build`   | Build de producción                     |
-| `npm run start`   | Sirve el build de producción            |
-| `npm run lint`    | ESLint                                  |
-| `npm test`        | Corre la suite de tests con Vitest      |
-| `npm run db:seed` | Carga geografía y elecciones en la base |
+| Command                | Description                                                                |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `npm run dev`          | Development server (Turbopack)                                             |
+| `npm run build`        | Production build                                                           |
+| `npm run start`        | Serves the production build                                                |
+| `npm run lint`         | ESLint                                                                     |
+| `npm test`             | Runs the test suite with Vitest                                            |
+| `npm run db:seed`      | Loads geography and elections into the database                            |
+| `npm run sync:general` | Syncs every district of the active election and marks the results as final |
 
 ---
 
-## Cómo se reparten las bancas (método D'Hondt)
+## How seats are allocated (D'Hondt method)
 
-1. Los votos de cada lista se dividen por 1, 2, 3, … hasta la cantidad de bancas en juego.
-2. Se ordenan todos los cocientes de mayor a menor.
-3. Los _N_ cocientes más altos ganan una banca cada uno (_N_ = bancas del distrito).
-4. Dentro de cada lista, las bancas van a los candidatos con más votos preferenciales.
+1. Each list's votes are divided by 1, 2, 3, … up to the number of seats at stake.
+2. All quotients are sorted from highest to lowest.
+3. The _N_ highest quotients win one seat each (_N_ = the district's seats).
+4. Within each list, seats go to the candidates with the most preferential votes.
 
-La tabla "Asignación por el método D'Hondt" de la pantalla de Concejales muestra cada cociente y el número de orden de la banca que obtuvo.
+The "Asignación por el método D'Hondt" (D'Hondt allocation) table on the Councilors screen shows each quotient and the order number of the seat it won.
 
 ---
 
-## Aviso
+## Disclaimer
 
-Escrutinia es un proyecto independiente y **no está afiliado al TSJE**. Los datos provienen del TREP, que es **preliminar y no oficial**: los resultados definitivos son los del juzgamiento oficial del TSJE. El reparto de bancas es una proyección hecha con los votos escrutados hasta el momento.
+Escrutinia is an independent project and is **not affiliated with the TSJE**. The data comes from the TREP, which is **preliminary and unofficial**: the final results are those of the TSJE's official adjudication. The seat allocation is a projection based on the votes counted so far.
