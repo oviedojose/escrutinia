@@ -1,0 +1,1 @@
+ALTER TABLE "resultados_snapshot" ADD COLUMN "final" boolean DEFAULT false NOT NULL;

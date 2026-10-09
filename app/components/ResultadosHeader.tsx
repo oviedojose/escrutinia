@@ -11,6 +11,7 @@ interface ResultadosHeaderProps {
     eleccionSeleccionada: NonNullable<ContextoResultados["eleccionSeleccionada"]>;
   };
   statusTimestamp?: string;
+  statusFinal?: boolean;
 }
 
 /** NavBar + filtros de elección y ubicación, comunes a las páginas de resultados. */
@@ -18,12 +19,14 @@ export function ResultadosHeader({
   active,
   contexto,
   statusTimestamp,
+  statusFinal,
 }: ResultadosHeaderProps) {
   return (
     <>
       <NavBar
         active={active}
         statusTimestamp={statusTimestamp}
+        statusFinal={statusFinal}
         departamentoId={contexto.departamentoId}
         municipioId={contexto.municipioId}
         codeleccion={contexto.eleccionSeleccionada.codeleccion}

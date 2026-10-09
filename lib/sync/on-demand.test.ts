@@ -57,6 +57,25 @@ describe("obtenerOSincronizarSnapshot", () => {
     expect(guardarSnapshot).not.toHaveBeenCalled();
   });
 
+  it("si el último snapshot es final, lo devuelve sin llamar al TSJE aunque esté vencido", async () => {
+    const snapshotFinal = {
+      ...snapshotSincronizadoHace(60 * 24),
+      final: true,
+    } as SnapshotRow;
+    const fetchResultado = vi.fn();
+
+    const resultado = await obtenerOSincronizarSnapshot(1, 44, 11, 13, 1, {
+      obtenerSnapshotExistente: vi.fn().mockResolvedValue(snapshotFinal),
+      fetchResultado,
+      guardarSnapshot: vi.fn(),
+      renovarSnapshot: vi.fn(),
+      ahora,
+    });
+
+    expect(resultado).toBe(snapshotFinal);
+    expect(fetchResultado).not.toHaveBeenCalled();
+  });
+
   it("si el último snapshot tiene 5 minutos o más, lo actualiza desde el TSJE", async () => {
     const snapshotViejo = snapshotSincronizadoHace(5);
     const snapshotNuevo = snapshotSincronizadoHace(0, 2);
