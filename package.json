@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:unit": "vitest run --exclude lib/queries/snapshots.test.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "db:seed": "tsx --env-file=.env.local lib/db/seed.ts",
     "sync:general": "tsx --env-file=.env.local lib/sync/sync-general.ts"
   },
